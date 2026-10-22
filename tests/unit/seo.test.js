@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { buildRobotsTxt, buildSitemapXml, resolveSiteUrl } from '../../src/seo.js'
-import { ROUTES, isKnownRoute } from '../../src/routes.js'
+import { ROUTES, isKnownRoute, routeHtmlFile } from '../../src/routes.js'
 
 const DEFAULT = 'https://www.tbagstore.com'
 
@@ -31,7 +31,14 @@ describe('robots.txt and sitemap.xml', () => {
   it('sitemap lists only canonical-origin URLs for every public route', () => {
     const xml = buildSitemapXml(DEFAULT)
     const locs = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1])
-    expect(locs).toEqual([`${DEFAULT}/`, `${DEFAULT}/products/magnetic-golf-towel`, `${DEFAULT}/privacy`])
+    expect(locs).toEqual([
+      `${DEFAULT}/`,
+      `${DEFAULT}/products/magnetic-golf-towel`,
+      `${DEFAULT}/faq`,
+      `${DEFAULT}/shipping`,
+      `${DEFAULT}/returns`,
+      `${DEFAULT}/privacy`,
+    ])
     for (const loc of locs) expect(loc.startsWith(`${DEFAULT}/`)).toBe(true)
   })
 })
@@ -39,19 +46,20 @@ describe('robots.txt and sitemap.xml', () => {
 describe('routes and vercel.json', () => {
   const vercel = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8'))
 
-  it('rewrites exactly the non-root routes to the SPA (no catch-all, so unknown paths 404)', () => {
+  it('rewrites exactly the non-root routes to their prerendered HTML (no catch-all, so unknown paths 404)', () => {
     const sources = vercel.rewrites.map((r) => r.source).sort()
     const expected = ROUTES.map((r) => r.path)
       .filter((p) => p !== '/')
       .sort()
     expect(sources).toEqual(expected)
-    for (const rewrite of vercel.rewrites) expect(rewrite.destination).toBe('/index.html')
+    for (const rewrite of vercel.rewrites) expect(rewrite.destination).toBe(routeHtmlFile(rewrite.source))
   })
 
   it('isKnownRoute matches real pages only', () => {
     expect(isKnownRoute('/')).toBe(true)
     expect(isKnownRoute('/products/magnetic-golf-towel')).toBe(true)
     expect(isKnownRoute('/privacy/')).toBe(true)
+    for (const path of ['/faq', '/shipping', '/returns']) expect(isKnownRoute(path)).toBe(true)
     expect(isKnownRoute('/nope')).toBe(false)
     expect(isKnownRoute('/products')).toBe(false)
   })

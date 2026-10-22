@@ -1,11 +1,9 @@
 import ProductImagePlaceholder from '../components/ProductImagePlaceholder.jsx'
 import SignupSection from '../components/SignupSection.jsx'
 import { product } from '../content/copy.js'
-import usePageTitle from '../hooks/usePageTitle.js'
 
-// No price or buy button in this ticket: checkout ships later.
+// No price or buy button in this ticket: checkout ships later. Product JSON-LD (no offers) is in src/seo.js.
 export default function Product() {
-  usePageTitle(product.name)
   return (
     <>
       <article className="mx-auto grid max-w-5xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-2 md:py-20">

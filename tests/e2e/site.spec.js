@@ -4,6 +4,9 @@ const PAGES = [
   { path: '/', heading: /stuck right where you need it/i },
   { path: '/products/magnetic-golf-towel', heading: 'Magnetic Golf Towel with Tee' },
   { path: '/privacy', heading: 'Privacy' },
+  { path: '/faq', heading: 'Frequently asked questions' },
+  { path: '/shipping', heading: 'Shipping' },
+  { path: '/returns', heading: 'Returns' },
 ]
 const VIEWPORTS = [
   { width: 390, height: 844 },
@@ -97,5 +100,18 @@ test('Open Graph and canonical tags use the canonical origin', async ({ page }) 
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', 'https://www.tbagstore.com/')
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://www.tbagstore.com/')
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /tbagstore/)
-  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', '/favicon.svg')
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute('href', '/favicon.svg')
+})
+
+test('footer links are at least 24px tall and wide on phones', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  const links = page.locator('footer a')
+  const count = await links.count()
+  expect(count).toBeGreaterThan(0)
+  for (let i = 0; i < count; i += 1) {
+    const box = await links.nth(i).boundingBox()
+    expect(box.height).toBeGreaterThanOrEqual(24)
+    expect(box.width).toBeGreaterThanOrEqual(24)
+  }
 })

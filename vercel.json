@@ -5,8 +5,11 @@
   "outputDirectory": "dist",
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/products/magnetic-golf-towel", "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/index.html" }
+    { "source": "/products/magnetic-golf-towel", "destination": "/products/magnetic-golf-towel/index.html" },
+    { "source": "/faq", "destination": "/faq/index.html" },
+    { "source": "/shipping", "destination": "/shipping/index.html" },
+    { "source": "/returns", "destination": "/returns/index.html" },
+    { "source": "/privacy", "destination": "/privacy/index.html" }
   ],
   "headers": [
     {

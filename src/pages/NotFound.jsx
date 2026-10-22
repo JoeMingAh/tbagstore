@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
-import usePageTitle from '../hooks/usePageTitle.js'
 
 // The HTTP 404 status comes from the server (vercel.json + dist/404.html); this is the visible page.
 export default function NotFound() {
-  usePageTitle('Page not found')
   return (
     <section className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6">
       <p className="text-sm font-semibold tracking-widest text-green-700 uppercase">404</p>
