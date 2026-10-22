@@ -21,6 +21,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { SITE_URL: '', SUBSCRIBE_PROVIDER: '', RESEND_API_KEY: '', RESEND_AUDIENCE_ID: '' },
+    env: { SITE_URL: '', SUBSCRIBE_PROVIDER: '', RESEND_API_KEY: '', RESEND_BRAND: '', RESEND_SEGMENT_ID: '' },
   },
 })

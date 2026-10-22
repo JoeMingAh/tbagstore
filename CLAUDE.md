@@ -31,3 +31,7 @@ Checkout/Stripe, real product photos, final logo and brand name, more products.
 - Unknown route returns 404; robots and sitemap list only `https://www.tbagstore.com` URLs.
 - Swapping the logo means only adding a file in `public/brand/` and changing `Logo.jsx` (check by reading the code).
 
+
+
+## Update (The Architect, Resend)
+Use Resend's current contacts API (POST /contacts) with properties {brand: RESEND_BRAND, signup_source: 'site'}; no audience ID. Add to RESEND_SEGMENT_ID only if set. Existing contact: update properties, return {ok:true}. No key: stub.

@@ -1,8 +1,10 @@
 // POST /api/subscribe  { email, company? }  ->  200 { ok: true }
 //
 // Provider is chosen by env:
-//   SUBSCRIBE_PROVIDER=resend + RESEND_API_KEY + RESEND_AUDIENCE_ID -> add contact to the Resend audience
-//   anything else (including missing Resend vars)                    -> log a stub line, still return ok
+//   RESEND_API_KEY set (and SUBSCRIBE_PROVIDER not 'stub') -> create/update a Resend contact via the
+//     current contacts API, tagged properties.brand = RESEND_BRAND (default 'tbagstore') so it stays
+//     out of every Sip Haven list; added to RESEND_SEGMENT_ID only if that is set.
+//   anything else (including a missing key)               -> log a stub line, still return ok
 // The handler must never throw: every path ends in a JSON response.
 import { isValidEmail } from '../src/lib/email.js'
 
@@ -14,10 +16,16 @@ export function maskEmail(email) {
   return `${local.slice(0, 1)}***@${domain}`
 }
 
+const RESEND_API = 'https://api.resend.com'
+export const DEFAULT_BRAND = 'tbagstore'
+
 export function getProvider(env = process.env) {
-  const wantsResend = (env.SUBSCRIBE_PROVIDER || '').trim().toLowerCase() === 'resend'
-  if (wantsResend && env.RESEND_API_KEY && env.RESEND_AUDIENCE_ID) return 'resend'
-  return 'stub'
+  if ((env.SUBSCRIBE_PROVIDER || '').trim().toLowerCase() === 'stub') return 'stub'
+  return (env.RESEND_API_KEY || '').trim() ? 'resend' : 'stub'
+}
+
+export function contactProperties(env = process.env) {
+  return { brand: (env.RESEND_BRAND || '').trim() || DEFAULT_BRAND, signup_source: 'site' }
 }
 
 function send(res, status, body) {
@@ -40,18 +48,58 @@ function readBody(req) {
   }
 }
 
-async function addResendContact(email, env) {
-  const url = `https://api.resend.com/audiences/${encodeURIComponent(env.RESEND_AUDIENCE_ID)}/contacts`
-  const response = await fetch(url, {
-    method: 'POST',
+function resendRequest(method, path, env, body) {
+  return fetch(`${RESEND_API}${path}`, {
+    method,
     headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${env.RESEND_API_KEY.trim()}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, unsubscribed: false }),
+    body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
   })
-  if (!response.ok) throw new Error(`Resend responded ${response.status}`)
+}
+
+async function readError(response) {
+  try {
+    const data = await response.json()
+    return typeof data?.message === 'string' ? data.message : ''
+  } catch {
+    return ''
+  }
+}
+
+// A contact that is already on the list comes back as 409, or with a message saying it
+// "already exists". Anything else is a real failure.
+async function isDuplicate(response) {
+  if (response.status === 409) return true
+  if (response.status !== 400 && response.status !== 422) return false
+  return /already\s+exist/i.test(await readError(response))
+}
+
+export async function saveResendContact(email, env = process.env) {
+  const properties = contactProperties(env)
+  const created = await resendRequest('POST', '/contacts', env, { email, unsubscribed: false, properties })
+  if (!created.ok) {
+    if (!(await isDuplicate(created))) throw new Error(`Resend create responded ${created.status}`)
+    const updated = await resendRequest('PATCH', `/contacts/${encodeURIComponent(email)}`, env, { properties })
+    if (!updated.ok) throw new Error(`Resend update responded ${updated.status}`)
+  }
+
+  const segmentId = (env.RESEND_SEGMENT_ID || '').trim()
+  if (segmentId) {
+    // Optional: the signup already counts, so a segment failure is logged, not surfaced.
+    try {
+      const added = await resendRequest(
+        'POST',
+        `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(segmentId)}`,
+        env,
+      )
+      if (!added.ok) console.error(`[subscribe] resend segment add responded ${added.status}`)
+    } catch (error) {
+      console.error('[subscribe] resend segment add failed:', error.message)
+    }
+  }
 }
 
 export default async function handler(req, res) {
@@ -76,7 +124,7 @@ export default async function handler(req, res) {
 
     if (getProvider() === 'resend') {
       try {
-        await addResendContact(email, process.env)
+        await saveResendContact(email, process.env)
       } catch (error) {
         console.error('[subscribe] resend failed:', error.message)
         return send(res, 502, { ok: false, error: 'Could not save your signup. Please try again.' })
