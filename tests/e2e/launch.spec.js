@@ -125,7 +125,7 @@ test('share image and icons are served at the right size', async ({ page, reques
   const appleBuf = await apple.body()
   expect([appleBuf.readUInt32BE(16), appleBuf.readUInt32BE(20)]).toEqual([180, 180])
 
-  for (const icon of ['/favicon.svg', '/favicon-32x32.png']) expect((await request.get(icon)).status(), icon).toBe(200)
+  for (const icon of ['/favicon.svg', '/favicon-32x32.png', '/favicon.ico']) expect((await request.get(icon)).status(), icon).toBe(200)
 
   // The browser decodes it at 1200x630 too.
   await page.goto('/')
