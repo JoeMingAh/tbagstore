@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import Logo, { BRAND_NAME, LOGO_FILE } from '../../src/brand/Logo.jsx'
+import Logo from '../../src/brand/Logo.jsx'
+import { BRAND_NAME, LOGO_FILE } from '../../src/brand/brand.js'
 
 describe('Logo', () => {
   it('renders the text wordmark while no logo file is configured', () => {

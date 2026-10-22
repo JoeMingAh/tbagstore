@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import handler, { contactProperties, getProvider, maskEmail } from '../../api/subscribe.js'
+import handler, { contactProperties, getProvider, maskEmail, welcomeEmailFrom } from '../../api/subscribe.js'
+import { buildWelcomeEmail, escapeHtml } from '../../src/emails/welcome.js'
+import { welcomeEmail } from '../../src/content/copy.js'
 
 function mockRes() {
   const res = { statusCode: 0, headers: {}, body: undefined }
@@ -19,7 +21,15 @@ async function call({ method = 'POST', body } = {}) {
   return res
 }
 
-const RESEND_VARS = ['SUBSCRIBE_PROVIDER', 'RESEND_API_KEY', 'RESEND_BRAND', 'RESEND_SEGMENT_ID']
+const RESEND_VARS = [
+  'SUBSCRIBE_PROVIDER',
+  'RESEND_API_KEY',
+  'RESEND_BRAND',
+  'RESEND_SEGMENT_ID',
+  'WELCOME_EMAIL_ENABLED',
+  'RESEND_FROM',
+  'SITE_URL',
+]
 
 function reply(status, body = {}) {
   return { ok: status >= 200 && status < 300, status, json: async () => body }
@@ -177,6 +187,145 @@ describe('/api/subscribe', () => {
   })
 })
 
+describe('/api/subscribe welcome email', () => {
+  const FROM = 'tbagstore <hello@tbagstore.com>'
+  const emailCalls = (fetchSpy) => fetchSpy.mock.calls.filter(([url]) => url === 'https://api.resend.com/emails')
+
+  beforeEach(() => {
+    for (const key of RESEND_VARS) vi.stubEnv(key, '')
+    vi.stubEnv('RESEND_API_KEY', 're_test')
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('sends no email when WELCOME_EMAIL_ENABLED is unset, and still returns ok', async () => {
+    vi.stubEnv('RESEND_FROM', FROM)
+    const fetchSpy = vi.fn().mockResolvedValue(reply(200, { id: 'c_1' }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await call({ body: { email: 'golfer@example.com' } })
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toEqual({ ok: true })
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(emailCalls(fetchSpy)).toHaveLength(0)
+    expect(JSON.parse(fetchSpy.mock.calls[0][1].body).properties.brand).toBe('tbagstore')
+  })
+
+  it.each([['TRUE'], ['1'], ['yes'], ['false']])('treats WELCOME_EMAIL_ENABLED=%s as off', async (value) => {
+    vi.stubEnv('WELCOME_EMAIL_ENABLED', value)
+    vi.stubEnv('RESEND_FROM', FROM)
+    const fetchSpy = vi.fn().mockResolvedValue(reply(200))
+    vi.stubGlobal('fetch', fetchSpy)
+    await call({ body: { email: 'golfer@example.com' } })
+    expect(emailCalls(fetchSpy)).toHaveLength(0)
+  })
+
+  it('sends no email when enabled but RESEND_FROM is missing', async () => {
+    vi.stubEnv('WELCOME_EMAIL_ENABLED', 'true')
+    const fetchSpy = vi.fn().mockResolvedValue(reply(200))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await call({ body: { email: 'golfer@example.com' } })
+    expect(res.body).toEqual({ ok: true })
+    expect(emailCalls(fetchSpy)).toHaveLength(0)
+  })
+
+  it('sends no email from the stub provider even when enabled', async () => {
+    vi.stubEnv('RESEND_API_KEY', '')
+    vi.stubEnv('WELCOME_EMAIL_ENABLED', 'true')
+    vi.stubEnv('RESEND_FROM', FROM)
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await call({ body: { email: 'golfer@example.com' } })
+    expect(res.body).toEqual({ ok: true })
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('sends one welcome email to a new contact when enabled', async () => {
+    vi.stubEnv('WELCOME_EMAIL_ENABLED', 'true')
+    vi.stubEnv('RESEND_FROM', FROM)
+    const fetchSpy = vi.fn().mockResolvedValue(reply(200, { id: 'x' }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await call({ body: { email: ' Golfer@Example.com ' } })
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toEqual({ ok: true })
+    expect(fetchSpy.mock.calls[0][0]).toBe('https://api.resend.com/contacts')
+    const sends = emailCalls(fetchSpy)
+    expect(sends).toHaveLength(1)
+    const [, init] = sends[0]
+    expect(init.method).toBe('POST')
+    expect(init.headers.Authorization).toBe('Bearer re_test')
+    const payload = JSON.parse(init.body)
+    expect(payload.from).toBe(FROM)
+    expect(payload.to).toEqual(['golfer@example.com'])
+    expect(payload.subject).toBe(welcomeEmail.subject)
+    expect(payload.html).toContain('https://www.tbagstore.com/products/magnetic-golf-towel')
+    expect(payload.text).toContain(welcomeEmail.heading)
+  })
+
+  it.each([
+    [409, {}],
+    [422, { message: 'Contact already exists' }],
+  ])('sends no email to an existing contact (%i) when enabled', async (status, body) => {
+    vi.stubEnv('WELCOME_EMAIL_ENABLED', 'true')
+    vi.stubEnv('RESEND_FROM', FROM)
+    const fetchSpy = vi.fn().mockResolvedValueOnce(reply(status, body)).mockResolvedValue(reply(200))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await call({ body: { email: 'golfer@example.com' } })
+    expect(res.body).toEqual({ ok: true })
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(fetchSpy.mock.calls[1][1].method).toBe('PATCH')
+    expect(emailCalls(fetchSpy)).toHaveLength(0)
+  })
+
+  it.each([
+    ['rejects', () => reply(422, { message: 'from address not verified' })],
+    ['is unreachable', () => Promise.reject(new Error('network down'))],
+  ])('still returns ok and logs when the welcome send %s', async (_label, failure) => {
+    vi.stubEnv('WELCOME_EMAIL_ENABLED', 'true')
+    vi.stubEnv('RESEND_FROM', FROM)
+    const fetchSpy = vi.fn((url) => (url.endsWith('/emails') ? failure() : Promise.resolve(reply(200))))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await call({ body: { email: 'golfer@example.com' } })
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toEqual({ ok: true })
+    expect(emailCalls(fetchSpy)).toHaveLength(1)
+    const logged = console.error.mock.calls.map(([message]) => message)
+    expect(logged.some((message) => message.startsWith('[subscribe] welcome email'))).toBe(true)
+  })
+
+  it('does not send a welcome email when saving the contact fails', async () => {
+    vi.stubEnv('WELCOME_EMAIL_ENABLED', 'true')
+    vi.stubEnv('RESEND_FROM', FROM)
+    const fetchSpy = vi.fn().mockResolvedValue(reply(500))
+    vi.stubGlobal('fetch', fetchSpy)
+    const res = await call({ body: { email: 'golfer@example.com' } })
+    expect(res.statusCode).toBe(502)
+    expect(emailCalls(fetchSpy)).toHaveLength(0)
+  })
+})
+
+describe('welcome email template', () => {
+  it('builds subject, html and text with links on the canonical site', () => {
+    const email = buildWelcomeEmail({ siteUrl: 'https://www.tbagstore.com' })
+    expect(email.subject).toBe(welcomeEmail.subject)
+    expect(email.html).toMatch(/^<!doctype html>/)
+    expect(email.html).toContain('href="https://www.tbagstore.com/products/magnetic-golf-towel"')
+    expect(email.text).toContain('https://www.tbagstore.com/products/magnetic-golf-towel')
+    for (const paragraph of welcomeEmail.paragraphs) expect(email.text).toContain(paragraph)
+  })
+
+  it('escapes HTML in copy', () => {
+    expect(escapeHtml(`<a href="x">'&'</a>`)).toBe('&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;')
+    // Copy apostrophes are escaped rather than injected raw.
+    const html = buildWelcomeEmail({ siteUrl: 'https://www.tbagstore.com' }).html
+    expect(html).toContain(escapeHtml(welcomeEmail.heading))
+  })
+})
+
 describe('helpers', () => {
   afterEach(() => vi.unstubAllEnvs())
 
@@ -191,6 +340,15 @@ describe('helpers', () => {
   it('contactProperties defaults the brand to tbagstore', () => {
     expect(contactProperties({})).toEqual({ brand: 'tbagstore', signup_source: 'site' })
     expect(contactProperties({ RESEND_BRAND: ' x ' })).toEqual({ brand: 'x', signup_source: 'site' })
+  })
+
+  it('welcomeEmailFrom needs WELCOME_EMAIL_ENABLED exactly "true" and a RESEND_FROM', () => {
+    expect(welcomeEmailFrom({})).toBeNull()
+    expect(welcomeEmailFrom({ RESEND_FROM: 'a@b.co' })).toBeNull()
+    expect(welcomeEmailFrom({ WELCOME_EMAIL_ENABLED: 'true' })).toBeNull()
+    expect(welcomeEmailFrom({ WELCOME_EMAIL_ENABLED: 'true', RESEND_FROM: '  ' })).toBeNull()
+    expect(welcomeEmailFrom({ WELCOME_EMAIL_ENABLED: 'True', RESEND_FROM: 'a@b.co' })).toBeNull()
+    expect(welcomeEmailFrom({ WELCOME_EMAIL_ENABLED: 'true', RESEND_FROM: ' a@b.co ' })).toBe('a@b.co')
   })
 
   it('maskEmail hides the local part', () => {

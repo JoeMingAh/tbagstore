@@ -1,10 +1,5 @@
-// LOGO SWAP (one-file change):
-//   1. Add the Designer's file to public/brand/ (e.g. public/brand/logo.svg).
-//   2. Set LOGO_FILE below to its public path, e.g. '/brand/logo.svg'.
-// While LOGO_FILE is null the text wordmark "tbagstore" is rendered instead.
-export const LOGO_FILE = null
-
-export const BRAND_NAME = 'tbagstore'
+// LOGO SWAP: set LOGO_FILE in ./brand.js (see the steps there). This component needs no edits.
+import { BRAND_NAME, LOGO_FILE } from './brand.js'
 
 export default function Logo({ className = '' }) {
   if (LOGO_FILE) {

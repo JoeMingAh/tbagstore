@@ -5,8 +5,13 @@
 //     current contacts API, tagged properties.brand = RESEND_BRAND (default 'tbagstore') so it stays
 //     out of every Sip Haven list; added to RESEND_SEGMENT_ID only if that is set.
 //   anything else (including a missing key)               -> log a stub line, still return ok
+// Welcome email (off by default): only with Resend, WELCOME_EMAIL_ENABLED=true and RESEND_FROM set,
+//   and only when the contact was newly created (not the duplicate/update path). A failed send is
+//   logged and never changes the { ok: true } response.
 // The handler must never throw: every path ends in a JSON response.
+import { buildWelcomeEmail } from '../src/emails/welcome.js'
 import { isValidEmail } from '../src/lib/email.js'
+import { resolveSiteUrl } from '../src/seo.js'
 
 const RESEND_TIMEOUT_MS = 8000
 
@@ -77,6 +82,31 @@ async function isDuplicate(response) {
   return /already\s+exist/i.test(await readError(response))
 }
 
+// Returns the sender address when the welcome email is switched on, otherwise null.
+export function welcomeEmailFrom(env = process.env) {
+  if ((env.WELCOME_EMAIL_ENABLED || '').trim() !== 'true') return null
+  return (env.RESEND_FROM || '').trim() || null
+}
+
+// Never throws: the signup is already saved, so a failed welcome send is only logged.
+export async function sendWelcomeEmail(email, env = process.env) {
+  const from = welcomeEmailFrom(env)
+  if (!from) return false
+  try {
+    const { subject, html, text } = buildWelcomeEmail({ siteUrl: resolveSiteUrl(env.SITE_URL) })
+    const response = await resendRequest('POST', '/emails', env, { from, to: [email], subject, html, text })
+    if (!response.ok) {
+      console.error(`[subscribe] welcome email responded ${response.status}`)
+      return false
+    }
+    return true
+  } catch (error) {
+    console.error('[subscribe] welcome email failed:', error?.message)
+    return false
+  }
+}
+
+// Resolves to { created: true } for a brand-new contact, { created: false } for an existing one.
 export async function saveResendContact(email, env = process.env) {
   const properties = contactProperties(env)
   const created = await resendRequest('POST', '/contacts', env, { email, unsubscribed: false, properties })
@@ -100,6 +130,7 @@ export async function saveResendContact(email, env = process.env) {
       console.error('[subscribe] resend segment add failed:', error.message)
     }
   }
+  return { created: created.ok }
 }
 
 export default async function handler(req, res) {
@@ -123,12 +154,15 @@ export default async function handler(req, res) {
     const email = body.email.trim().toLowerCase()
 
     if (getProvider() === 'resend') {
+      let saved
       try {
-        await saveResendContact(email, process.env)
+        saved = await saveResendContact(email, process.env)
       } catch (error) {
         console.error('[subscribe] resend failed:', error.message)
         return send(res, 502, { ok: false, error: 'Could not save your signup. Please try again.' })
       }
+      // Awaited (not fire-and-forget) so the serverless function isn't frozen mid-send.
+      if (saved.created) await sendWelcomeEmail(email, process.env)
     } else {
       console.log(`[subscribe] stub signup ${maskEmail(email)} (Resend not configured)`)
     }

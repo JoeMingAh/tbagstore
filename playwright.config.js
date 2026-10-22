@@ -3,8 +3,8 @@ import { defineConfig, devices } from '@playwright/test'
 const PORT = 4173
 
 // Runs against the production build via `vite preview`, which mirrors vercel.json routing
-// (real 404s) and mounts /api/subscribe locally. SITE_URL/Resend vars are cleared so tests
-// exercise the defaults and the stub provider.
+// (real 404s, per-route prerendered HTML) and mounts /api/subscribe locally. SITE_URL/Resend/welcome
+// email vars are cleared so tests exercise the defaults, the stub provider and no welcome email.
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
@@ -21,6 +21,14 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { SITE_URL: '', SUBSCRIBE_PROVIDER: '', RESEND_API_KEY: '', RESEND_BRAND: '', RESEND_SEGMENT_ID: '' },
+    env: {
+      SITE_URL: '',
+      SUBSCRIBE_PROVIDER: '',
+      RESEND_API_KEY: '',
+      RESEND_BRAND: '',
+      RESEND_SEGMENT_ID: '',
+      WELCOME_EMAIL_ENABLED: '',
+      RESEND_FROM: '',
+    },
   },
 })

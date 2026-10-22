@@ -3,11 +3,9 @@ import Logo from '../brand/Logo.jsx'
 import ProductImagePlaceholder from '../components/ProductImagePlaceholder.jsx'
 import SignupSection from '../components/SignupSection.jsx'
 import { home, product } from '../content/copy.js'
-import usePageTitle from '../hooks/usePageTitle.js'
 import { PRODUCT_PATH } from '../routes.js'
 
 export default function Home() {
-  usePageTitle(null)
   return (
     <>
       <section className="mx-auto grid max-w-5xl items-center gap-10 px-4 py-12 sm:px-6 md:grid-cols-2 md:py-20">

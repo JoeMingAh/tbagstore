@@ -22,7 +22,7 @@ export default [
     },
   },
   {
-    files: ['api/**/*.js', 'tests/**/*.js', '*.config.js'],
+    files: ['api/**/*.js', 'scripts/**/*.{js,mjs}', 'tests/**/*.js', '*.config.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
