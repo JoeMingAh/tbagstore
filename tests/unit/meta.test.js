@@ -167,6 +167,17 @@ describe('generated brand images', () => {
     expect(pngSize('og-image.png')).toEqual({ width: 1200, height: 630 })
   })
 
+  it('favicon.ico is a valid 32x32 icon wrapping the PNG favicon', () => {
+    const ico = readFileSync(path.resolve(process.cwd(), 'public', 'favicon.ico'))
+    expect(ico.readUInt16LE(2)).toBe(1)
+    expect(ico.readUInt16LE(4)).toBe(1)
+    expect(ico.readUInt8(6)).toBe(32)
+    expect(ico.readUInt8(7)).toBe(32)
+    const offset = ico.readUInt32LE(18)
+    expect(ico.subarray(offset, offset + 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+    expect(ico.readUInt32LE(14)).toBe(ico.length - offset)
+  })
+
   it('apple-touch-icon.png is 180x180 and favicon-32x32.png is 32x32', () => {
     expect(pngSize('apple-touch-icon.png')).toEqual({ width: 180, height: 180 })
     expect(pngSize('favicon-32x32.png')).toEqual({ width: 32, height: 32 })
