@@ -4,7 +4,7 @@ import path from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { ROUTES, findRoute, routeHtmlFile } from './src/routes.js'
+import { ROUTES, findRedirect, findRoute, routeHtmlFile } from './src/routes.js'
 import { buildRobotsTxt, buildSitemapXml, injectHead, pageMeta, resolveSiteUrl } from './src/seo.js'
 import subscribeHandler from './api/subscribe.js'
 
@@ -39,8 +39,8 @@ function sendHtml(res, status, file) {
   res.end(readFileSync(file))
 }
 
-// Mirrors vercel.json: known routes get their prerendered HTML (rewrites), real files are served
-// as-is, and everything else gets 404.html with a 404 status.
+// Mirrors vercel.json: moved URLs get a permanent redirect, known routes get their prerendered
+// HTML (rewrites), real files are served as-is, and everything else gets 404.html with a 404 status.
 function routingMiddleware(outDir) {
   return (req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next()
@@ -51,6 +51,12 @@ function routingMiddleware(outDir) {
       pathname = '/__malformed__'
     }
     if (pathname.startsWith('/api/')) return next()
+    const redirect = findRedirect(pathname)
+    if (redirect) {
+      res.statusCode = 308
+      res.setHeader('Location', redirect.destination)
+      return res.end()
+    }
     const route = findRoute(pathname)
     if (route) return sendHtml(res, 200, path.join(outDir, routeHtmlFile(route.path)))
     const file = path.join(outDir, pathname)
@@ -108,6 +114,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss(), tbagstoreSite(siteUrl)],
+    // SHOW_PRICES=true (env or .env.local) reveals draft prices; see src/content/products.js.
+    envPrefix: ['VITE_', 'SHOW_PRICES'],
     // Lets the browser build the same canonical/OG URLs as the prerendered HTML.
     define: { 'import.meta.env.SITE_URL': JSON.stringify(siteUrl) },
     test: {

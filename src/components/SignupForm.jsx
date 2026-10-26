@@ -1,9 +1,28 @@
 import { useId, useState } from 'react'
 import { signup as copy } from '../content/copy.js'
 import { isValidEmail } from '../lib/email.js'
+import { subscribe } from '../lib/subscribe.js'
 
-export default function SignupForm() {
+const STYLES = {
+  light: {
+    input:
+      'rounded-lg border border-forest/25 bg-cream px-4 py-3 text-base text-forest placeholder:text-charcoal/50 focus:border-gold',
+    button: 'rounded-lg bg-forest px-6 py-3 text-gold hover:bg-forest-light',
+    success: 'rounded-lg border border-forest/20 bg-cream-warm px-4 py-3 text-forest',
+    error: 'text-red-800',
+  },
+  dark: {
+    input:
+      'rounded-lg border border-gold/30 bg-forest px-4 py-3 text-sm text-cream placeholder:text-cream/40 focus:border-gold',
+    button: 'rounded-lg bg-gold px-5 py-3 text-forest hover:bg-gold-light',
+    success: 'rounded-lg border border-gold/40 bg-forest px-4 py-3 text-gold',
+    error: 'text-red-300',
+  },
+}
+
+export default function SignupForm({ variant = 'light', buttonLabel = copy.button, placeholder = copy.placeholder }) {
   const id = useId()
+  const styles = STYLES[variant]
   const [email, setEmail] = useState('')
   const [company, setCompany] = useState('') // honeypot
   const [status, setStatus] = useState('idle') // idle | submitting | success
@@ -17,27 +36,18 @@ export default function SignupForm() {
     }
     setError('')
     setStatus('submitting')
-    try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), company }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (response.ok && data.ok) {
-        setStatus('success')
-        return
-      }
-      setError(data.error || copy.failure)
-    } catch {
-      setError(copy.failure)
+    const result = await subscribe(email, company)
+    if (result.ok) {
+      setStatus('success')
+      return
     }
+    setError(result.error)
     setStatus('idle')
   }
 
   if (status === 'success') {
     return (
-      <p role="status" className="rounded-xl bg-green-100 px-4 py-3 font-medium text-green-900">
+      <p role="status" className={`font-mono text-xs font-semibold ${styles.success}`}>
         {copy.success}
       </p>
     )
@@ -45,9 +55,9 @@ export default function SignupForm() {
 
   const errorId = `${id}-error`
   return (
-    <form onSubmit={handleSubmit} noValidate className="w-full">
+    <form onSubmit={handleSubmit} noValidate className="relative w-full">
       <label htmlFor={`${id}-email`} className="sr-only">
-        Email address
+        {copy.label}
       </label>
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
@@ -55,19 +65,19 @@ export default function SignupForm() {
           type="email"
           name="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder={placeholder}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? errorId : undefined}
-          className="min-w-0 flex-1 rounded-full border border-stone-300 bg-white px-4 py-3 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+          className={`min-w-0 flex-1 font-mono outline-none focus:ring-2 focus:ring-gold/30 ${styles.input}`}
         />
         <button
           type="submit"
           disabled={status === 'submitting'}
-          className="rounded-full bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-light disabled:opacity-60"
+          className={`min-h-11 font-mono text-xs font-bold tracking-wider uppercase transition disabled:opacity-60 ${styles.button}`}
         >
-          {status === 'submitting' ? 'Sending…' : copy.button}
+          {status === 'submitting' ? copy.sending : buttonLabel}
         </button>
       </div>
       {/* Honeypot: hidden from people and assistive tech; bots tend to fill it. */}
@@ -84,7 +94,7 @@ export default function SignupForm() {
         />
       </div>
       {error && (
-        <p id={errorId} role="alert" className="mt-2 text-sm font-medium text-red-700">
+        <p id={errorId} role="alert" className={`mt-2 text-sm font-medium ${styles.error}`}>
           {error}
         </p>
       )}

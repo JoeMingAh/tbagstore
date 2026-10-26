@@ -1,20 +1,26 @@
 import { expect, test } from '@playwright/test'
+import { meta } from '../../src/content/copy.js'
+import { PRODUCTS } from '../../src/content/products.js'
 
 const SITE = 'https://www.tbagstore.com'
 const OG_IMAGE = `${SITE}/og-image.png`
+const BRAND = 'TBagger Golf Co.'
 
 const PAGES = [
-  { path: '/', title: 'tbagstore | Golf accessories, coming soon', canonical: `${SITE}/`, jsonLd: ['Organization'] },
-  {
-    path: '/products/magnetic-golf-towel',
-    title: 'Magnetic Golf Towel with Tee | tbagstore',
-    canonical: `${SITE}/products/magnetic-golf-towel`,
+  { path: '/', title: meta.home.title, canonical: `${SITE}/`, jsonLd: ['Organization'] },
+  { path: '/shop', title: `The Equipment Locker | ${BRAND}`, canonical: `${SITE}/shop`, jsonLd: [] },
+  ...PRODUCTS.map((product) => ({
+    path: `/products/${product.slug}`,
+    title: `${product.name} | ${BRAND}`,
+    canonical: `${SITE}/products/${product.slug}`,
     jsonLd: ['Product'],
-  },
-  { path: '/privacy', title: 'Privacy | tbagstore', canonical: `${SITE}/privacy`, jsonLd: [] },
-  { path: '/faq', title: 'FAQ | tbagstore', canonical: `${SITE}/faq`, jsonLd: [] },
-  { path: '/shipping', title: 'Shipping | tbagstore', canonical: `${SITE}/shipping`, jsonLd: [] },
-  { path: '/returns', title: 'Returns | tbagstore', canonical: `${SITE}/returns`, jsonLd: [] },
+  })),
+  { path: '/about', title: `The Bagger Ethos | ${BRAND}`, canonical: `${SITE}/about`, jsonLd: [] },
+  { path: '/club', title: `Join The Clubhouse | ${BRAND}`, canonical: `${SITE}/club`, jsonLd: [] },
+  { path: '/privacy', title: `Privacy | ${BRAND}`, canonical: `${SITE}/privacy`, jsonLd: [] },
+  { path: '/faq', title: `FAQ | ${BRAND}`, canonical: `${SITE}/faq`, jsonLd: [] },
+  { path: '/shipping', title: `Shipping | ${BRAND}`, canonical: `${SITE}/shipping`, jsonLd: [] },
+  { path: '/returns', title: `Returns | ${BRAND}`, canonical: `${SITE}/returns`, jsonLd: [] },
 ]
 
 const DRAFT_PAGES = [
@@ -24,15 +30,23 @@ const DRAFT_PAGES = [
 ]
 
 // Reads tags from raw HTML the way a crawler or link unfurler would (no JS).
+function decodeEntities(value) {
+  return value
+    ?.replaceAll('&quot;', '"')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&')
+}
+
 function parseHead(html) {
-  const attr = (tag, name) => tag.match(new RegExp(`\\s${name}="([^"]*)"`))?.[1]
+  const attr = (tag, name) => decodeEntities(tag.match(new RegExp(`\\s${name}="([^"]*)"`))?.[1])
   const meta = {}
   for (const [tag] of html.matchAll(/<meta\s[^>]*>/g)) {
     const key = attr(tag, 'property') || attr(tag, 'name')
     if (key) meta[key] = attr(tag, 'content')
   }
   return {
-    title: html.match(/<title>(.*?)<\/title>/)?.[1],
+    title: decodeEntities(html.match(/<title>(.*?)<\/title>/)?.[1]),
     canonical: [...html.matchAll(/<link\s[^>]*rel="canonical"[^>]*>/g)].map(([tag]) => attr(tag, 'href')),
     meta,
     jsonLd: [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs)].map((m) => m[1]),
@@ -83,15 +97,15 @@ test.describe('share tags in the served HTML (no JS)', () => {
     const response = await request.get('/definitely-not-a-page')
     expect(response.status()).toBe(404)
     const head = parseHead(await response.text())
-    expect(head.title).toBe('Page not found | tbagstore')
+    expect(head.title).toBe(`Page not found | ${BRAND}`)
     expect(head.meta.robots).toBe('noindex')
     expect(head.canonical).toEqual([`${SITE}/`])
-    expectShareTags(head, { title: 'Page not found | tbagstore', canonical: `${SITE}/` })
+    expectShareTags(head, { title: `Page not found | ${BRAND}`, canonical: `${SITE}/` })
     expect(head.jsonLd).toEqual([])
   })
 
   test('look-alike paths of new pages still 404', async ({ request }) => {
-    for (const path of ['/products', '/faq/extra', '/faq/index.htm', '/shipping.html']) {
+    for (const path of ['/products', '/products/', '/products/nope', '/faq/extra', '/faq/index.htm', '/shipping.html']) {
       expect((await request.get(path)).status(), path).toBe(404)
     }
   })
@@ -101,13 +115,15 @@ test('tags follow in-app navigation', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('contentinfo').getByRole('link', { name: 'FAQ' }).click()
   await expect(page).toHaveURL(/\/faq$/)
-  await expect(page).toHaveTitle('FAQ | tbagstore')
+  await expect(page).toHaveTitle(`FAQ | ${BRAND}`)
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}/faq`)
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', `${SITE}/faq`)
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0)
 
-  await page.getByRole('link', { name: 'Towel' }).click()
-  await expect(page).toHaveTitle('Magnetic Golf Towel with Tee | tbagstore')
+  await page.getByRole('contentinfo').getByRole('link', { name: /Equipment Archive/ }).click()
+  await page.getByRole('link', { name: 'The Clingy Caddie', exact: true }).click()
+  await expect(page).toHaveTitle(`The Clingy Caddie | ${BRAND}`)
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}/products/the-clingy-caddie`)
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(1)
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents()
   expect(jsonLd.map((json) => JSON.parse(json)['@type'])).toEqual(['Product'])

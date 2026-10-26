@@ -2,19 +2,38 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { meta as metaCopy } from '../../src/content/copy.js'
-import { PRODUCT_PATH } from '../../src/routes.js'
-import { SEO_END, SEO_START, applyHeadMeta, headTags, injectHead, pageMeta, renderHeadHtml } from '../../src/seo.js'
+import { PRODUCTS, productPath } from '../../src/content/products.js'
+import { TOWEL_PATH } from '../../src/routes.js'
+import {
+  SEO_END,
+  SEO_START,
+  applyHeadMeta,
+  headTags,
+  injectHead,
+  pageMeta,
+  productMetaCopy,
+  renderHeadHtml,
+} from '../../src/seo.js'
 
 const SITE = 'https://www.tbagstore.com'
 const OG_IMAGE = `${SITE}/og-image.png`
+const BRAND = 'TBagger Golf Co.'
 
 const PAGES = [
-  { path: '/', key: 'home', title: metaCopy.home.title, canonical: `${SITE}/` },
-  { path: PRODUCT_PATH, key: 'product', title: 'Magnetic Golf Towel with Tee | tbagstore', canonical: `${SITE}${PRODUCT_PATH}` },
-  { path: '/privacy', key: 'privacy', title: 'Privacy | tbagstore', canonical: `${SITE}/privacy` },
-  { path: '/faq', key: 'faq', title: 'FAQ | tbagstore', canonical: `${SITE}/faq` },
-  { path: '/shipping', key: 'shipping', title: 'Shipping | tbagstore', canonical: `${SITE}/shipping` },
-  { path: '/returns', key: 'returns', title: 'Returns | tbagstore', canonical: `${SITE}/returns` },
+  { path: '/', copy: metaCopy.home, title: metaCopy.home.title, canonical: `${SITE}/` },
+  { path: '/shop', copy: metaCopy.shop, title: `The Equipment Locker | ${BRAND}`, canonical: `${SITE}/shop` },
+  ...PRODUCTS.map((product) => ({
+    path: productPath(product.slug),
+    copy: productMetaCopy(product),
+    title: `${product.name} | ${BRAND}`,
+    canonical: `${SITE}/products/${product.slug}`,
+  })),
+  { path: '/club', copy: metaCopy.club, title: `Join The Clubhouse | ${BRAND}`, canonical: `${SITE}/club` },
+  { path: '/about', copy: metaCopy.about, title: `The Bagger Ethos | ${BRAND}`, canonical: `${SITE}/about` },
+  { path: '/privacy', copy: metaCopy.privacy, title: `Privacy | ${BRAND}`, canonical: `${SITE}/privacy` },
+  { path: '/faq', copy: metaCopy.faq, title: `FAQ | ${BRAND}`, canonical: `${SITE}/faq` },
+  { path: '/shipping', copy: metaCopy.shipping, title: `Shipping | ${BRAND}`, canonical: `${SITE}/shipping` },
+  { path: '/returns', copy: metaCopy.returns, title: `Returns | ${BRAND}`, canonical: `${SITE}/returns` },
 ]
 
 function tagMap(meta) {
@@ -33,33 +52,46 @@ function jsonLdTypes(meta) {
 }
 
 describe('per-page meta tags', () => {
-  it.each(PAGES)('$path has its own title, description, canonical, OG and Twitter tags', ({ path, key, title, canonical }) => {
+  it.each(PAGES)('$path has its own title, description, canonical, OG and Twitter tags', ({ path, copy, title, canonical }) => {
     const meta = pageMeta(path, SITE)
     const tags = tagMap(meta)
     expect(meta.title).toBe(title)
-    expect(tags.description).toBe(metaCopy[key].description)
+    expect(tags.description).toBe(copy.description)
     expect(tags.canonical).toBe(canonical)
     expect(tags.robots).toBeUndefined()
     expect(tags['og:title']).toBe(title)
-    expect(tags['og:description']).toBe(metaCopy[key].description)
+    expect(tags['og:site_name']).toBe(BRAND)
+    expect(tags['og:description']).toBe(copy.description)
     expect(tags['og:url']).toBe(canonical)
     expect(tags['og:image']).toBe(OG_IMAGE)
     expect(tags['og:image:width']).toBe('1200')
     expect(tags['og:image:height']).toBe('630')
     expect(tags['twitter:card']).toBe('summary_large_image')
     expect(tags['twitter:title']).toBe(title)
-    expect(tags['twitter:description']).toBe(metaCopy[key].description)
+    expect(tags['twitter:description']).toBe(copy.description)
     expect(tags['twitter:image']).toBe(OG_IMAGE)
+  })
+
+  it('every page has a distinct title and description', () => {
+    const metas = PAGES.map((page) => pageMeta(page.path, SITE))
+    expect(new Set(metas.map((meta) => meta.title)).size).toBe(PAGES.length)
+    expect(new Set(metas.map((meta) => meta.description)).size).toBe(PAGES.length)
   })
 
   it('treats a trailing slash as the same page', () => {
     expect(pageMeta('/faq/', SITE).canonical).toBe(`${SITE}/faq`)
   })
 
-  it('gives unknown paths the 404 tags with noindex', () => {
+  it('has no checkout page', () => {
+    expect(pageMeta('/checkout', SITE).title).toBe(`Page not found | ${BRAND}`)
+    expect(pageMeta('/checkout', SITE).noindex).toBe(true)
+  })
+
+  it('gives unknown paths (including unknown product slugs) the 404 tags with noindex', () => {
+    expect(pageMeta('/products/not-a-product', SITE).title).toBe(`Page not found | ${BRAND}`)
     const meta = pageMeta('/nope', SITE)
     const tags = tagMap(meta)
-    expect(meta.title).toBe('Page not found | tbagstore')
+    expect(meta.title).toBe(`Page not found | ${BRAND}`)
     expect(tags.robots).toBe('noindex')
     expect(tags.canonical).toBe(`${SITE}/`)
     expect(tags['og:image']).toBe(OG_IMAGE)
@@ -81,23 +113,29 @@ describe('JSON-LD', () => {
     expect(jsonLdTypes(pageMeta('/', SITE))).toEqual(['Organization'])
   })
 
-  it('product page has Product only, with no price or offers', () => {
-    const meta = pageMeta(PRODUCT_PATH, SITE)
+  it('home Organization uses the new brand name', () => {
+    expect(pageMeta('/', SITE).jsonLd[0].name).toBe(BRAND)
+  })
+
+  it.each(PRODUCTS)('$name page has Product only, with no price or offers', (product) => {
+    const meta = pageMeta(productPath(product.slug), SITE)
     expect(jsonLdTypes(meta)).toEqual(['Product'])
-    const product = meta.jsonLd[0]
-    expect(product.name).toBe('Magnetic Golf Towel with Tee')
-    expect(product.url).toBe(`${SITE}${PRODUCT_PATH}`)
-    expect(product.image).toBe(OG_IMAGE)
-    const raw = JSON.stringify(product)
-    expect(raw).not.toMatch(/offers|price/i)
+    const data = meta.jsonLd[0]
+    expect(data.name).toBe(product.name)
+    expect(data.url).toBe(`${SITE}/products/${product.slug}`)
+    expect(data.image).toBe(OG_IMAGE)
+    expect(data.brand).toEqual({ '@type': 'Brand', name: BRAND })
+    expect(JSON.stringify(data)).not.toMatch(/offers|price/i)
   })
 
   it('other pages have no JSON-LD', () => {
-    for (const path of ['/privacy', '/faq', '/shipping', '/returns']) expect(jsonLdTypes(pageMeta(path, SITE))).toEqual([])
+    for (const path of ['/shop', '/club', '/about', '/privacy', '/faq', '/shipping', '/returns']) {
+      expect(jsonLdTypes(pageMeta(path, SITE))).toEqual([])
+    }
   })
 
   it('the rendered script tags are valid JSON', () => {
-    for (const path of ['/', PRODUCT_PATH]) {
+    for (const path of ['/', TOWEL_PATH]) {
       const html = renderHeadHtml(pageMeta(path, SITE))
       const scripts = [...html.matchAll(/<script data-seo type="application\/ld\+json">(.*?)<\/script>/g)]
       expect(scripts).toHaveLength(1)
@@ -141,11 +179,11 @@ describe('head HTML', () => {
 describe('applyHeadMeta (client-side navigation)', () => {
   it('replaces the previous page tags instead of stacking them', () => {
     applyHeadMeta(document, pageMeta('/', SITE))
-    applyHeadMeta(document, pageMeta(PRODUCT_PATH, SITE))
-    expect(document.title).toBe('Magnetic Golf Towel with Tee | tbagstore')
+    applyHeadMeta(document, pageMeta(TOWEL_PATH, SITE))
+    expect(document.title).toBe(`The Clingy Caddie | ${BRAND}`)
     expect(document.querySelectorAll('link[rel="canonical"]')).toHaveLength(1)
-    expect(document.querySelector('link[rel="canonical"]').href).toBe(`${SITE}${PRODUCT_PATH}`)
-    expect(document.querySelector('meta[property="og:url"]').content).toBe(`${SITE}${PRODUCT_PATH}`)
+    expect(document.querySelector('link[rel="canonical"]').href).toBe(`${SITE}${TOWEL_PATH}`)
+    expect(document.querySelector('meta[property="og:url"]').content).toBe(`${SITE}${TOWEL_PATH}`)
     const scripts = document.querySelectorAll('script[type="application/ld+json"]')
     expect(scripts).toHaveLength(1)
     expect(JSON.parse(scripts[0].textContent)['@type']).toBe('Product')

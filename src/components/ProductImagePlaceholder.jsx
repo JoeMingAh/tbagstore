@@ -1,13 +1,20 @@
-// Stand-in until real product photos exist. Keeps a fixed aspect ratio so layout won't shift
-// when the <img> replaces it.
-export default function ProductImagePlaceholder({ className = '' }) {
+import { productCard as copy } from '../content/copy.js'
+
+// Stand-in until real product photos exist. It fills whatever box the caller sizes (className),
+// so the layout won't shift when a real photo is set in src/content/products.js.
+export default function ProductImagePlaceholder({ label, className = '', compact = false }) {
   return (
     <div
       role="img"
-      aria-label="Product photo coming soon"
-      className={`flex aspect-square w-full items-center justify-center rounded-3xl border-2 border-dashed border-stone-300 bg-gradient-to-br from-green-50 to-stone-100 ${className}`}
+      aria-label={label ? `${label}: ${copy.photoComingSoon.toLowerCase()}` : copy.photoComingSoon}
+      className={`dimple-pattern-dark flex items-center justify-center bg-forest text-center ${className}`}
     >
-      <span className="px-4 text-center text-sm font-medium text-stone-500">Product photo coming soon</span>
+      {!compact && (
+        <span className="flex flex-col items-center gap-1 px-4" aria-hidden="true">
+          <span className="font-mono text-[10px] tracking-[0.25em] text-gold uppercase">{copy.photoComingSoon}</span>
+          {label && <span className="font-serif text-lg text-cream/80 italic">{label}</span>}
+        </span>
+      )}
     </div>
   )
 }

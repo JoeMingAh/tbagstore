@@ -262,7 +262,7 @@ describe('/api/subscribe welcome email', () => {
     expect(payload.from).toBe(FROM)
     expect(payload.to).toEqual(['golfer@example.com'])
     expect(payload.subject).toBe(welcomeEmail.subject)
-    expect(payload.html).toContain('https://www.tbagstore.com/products/magnetic-golf-towel')
+    expect(payload.html).toContain('https://www.tbagstore.com/shop')
     expect(payload.text).toContain(welcomeEmail.heading)
   })
 
@@ -313,8 +313,8 @@ describe('welcome email template', () => {
     const email = buildWelcomeEmail({ siteUrl: 'https://www.tbagstore.com' })
     expect(email.subject).toBe(welcomeEmail.subject)
     expect(email.html).toMatch(/^<!doctype html>/)
-    expect(email.html).toContain('href="https://www.tbagstore.com/products/magnetic-golf-towel"')
-    expect(email.text).toContain('https://www.tbagstore.com/products/magnetic-golf-towel')
+    expect(email.html).toContain('href="https://www.tbagstore.com/shop"')
+    expect(email.text).toContain('https://www.tbagstore.com/shop')
     for (const paragraph of welcomeEmail.paragraphs) expect(email.text).toContain(paragraph)
   })
 

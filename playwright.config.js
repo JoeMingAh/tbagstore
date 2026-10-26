@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const PORT = 4173
+// Not Vite's default 4173: sibling repos on the shared box run their own preview there, and
+// reuseExistingServer would silently test the wrong site.
+const PORT = 4183
 
 // Runs against the production build via `vite preview`, which mirrors vercel.json routing
 // (real 404s, per-route prerendered HTML) and mounts /api/subscribe locally. SITE_URL/Resend/welcome
@@ -22,6 +24,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
+      SHOW_PRICES: '',
       SITE_URL: '',
       SUBSCRIBE_PROVIDER: '',
       RESEND_API_KEY: '',
