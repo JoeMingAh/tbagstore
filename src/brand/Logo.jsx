@@ -27,7 +27,7 @@ export default function Logo({ className = '', motto = false }) {
         </span>
       </span>
       {motto && (
-        <span className="-mt-1 font-mono text-[9px] tracking-[0.32em] text-gold/80 uppercase">{BRAND_MOTTO}</span>
+        <span className="-mt-1 font-mono text-[9px] tracking-[0.32em] text-gold uppercase">{BRAND_MOTTO}</span>
       )}
     </span>
   )

@@ -14,7 +14,9 @@
   --color-cream-dark: #ddd7c8;
   --color-gold: #c5a059;
   --color-gold-light: #d9b876;
-  --color-gold-dark: #9e7d3b;
+  /* Gold text on light surfaces. The mockup's #9e7d3b was 3.5:1 on cream; this is 5.4:1 on cream
+     and 4.9:1 on cream-warm (WCAG AA 4.5:1). Plain gold is only for dark (forest/charcoal) backgrounds. */
+  --color-gold-dark: #7d5f27;
 
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;

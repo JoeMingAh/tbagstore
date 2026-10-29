@@ -1,11 +1,12 @@
 import { useId, useState } from 'react'
 import { club as copy, signup } from '../content/copy.js'
+import useHydrated from '../hooks/useHydrated.js'
 import { isValidEmail } from '../lib/email.js'
 import { sandbaggerTier } from '../lib/handicap.js'
 import { subscribe } from '../lib/subscribe.js'
 
 const INPUT =
-  'w-full rounded-lg border border-forest/25 bg-cream px-4 py-3 text-sm font-medium text-forest focus:border-gold focus:outline-none'
+  'w-full rounded-lg border border-forest/25 bg-cream px-4 py-3 text-sm font-medium text-forest placeholder:text-charcoal/70 focus:border-gold focus:outline-none'
 const LABEL = 'mb-2 block font-mono text-xs tracking-wider text-forest uppercase'
 
 function MemberCard({ name, course, official, negotiated, tier, serial }) {
@@ -73,6 +74,7 @@ export default function Club() {
   const [serial, setSerial] = useState(copy.card.serial)
   const [status, setStatus] = useState('idle') // idle | submitting | success
   const [error, setError] = useState('')
+  const hydrated = useHydrated()
   const { tier, diagnosis } = sandbaggerTier(official, negotiated)
 
   async function handleSubmit(event) {
@@ -111,162 +113,165 @@ export default function Club() {
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
           <div className="rounded-2xl border border-forest/15 bg-cream-warm p-6 shadow-sm sm:p-10 lg:col-span-7">
             <h2 className="mb-2 font-serif text-3xl font-semibold text-forest">{copy.formHeading}</h2>
-            <p className="mb-8 font-mono text-xs tracking-wider text-charcoal/60 uppercase">{copy.formNote}</p>
+            <p className="mb-8 font-mono text-xs tracking-wider text-charcoal/70 uppercase">{copy.formNote}</p>
 
-            <form onSubmit={handleSubmit} noValidate className="relative space-y-6" aria-label={copy.formLabel}>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor={`${id}-name`} className={LABEL}>
-                    {copy.fields.name}
-                  </label>
-                  <input
-                    id={`${id}-name`}
-                    type="text"
-                    autoComplete="name"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder={copy.fields.namePlaceholder}
-                    className={INPUT}
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`${id}-email`} className={LABEL}>
-                    {copy.fields.email}
-                  </label>
-                  <input
-                    id={`${id}-email`}
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder={copy.fields.emailPlaceholder}
-                    aria-invalid={error ? 'true' : 'false'}
-                    aria-describedby={error ? errorId : undefined}
-                    className={INPUT}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor={`${id}-course`} className={LABEL}>
-                    {copy.fields.course}
-                  </label>
-                  <input
-                    id={`${id}-course`}
-                    type="text"
-                    value={course}
-                    onChange={(event) => setCourse(event.target.value)}
-                    placeholder={copy.fields.coursePlaceholder}
-                    className={INPUT}
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`${id}-drink`} className={LABEL}>
-                    {copy.fields.drink}
-                  </label>
-                  <select id={`${id}-drink`} value={drink} onChange={(event) => setDrink(event.target.value)} className={INPUT}>
-                    {copy.drinks.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-6 rounded-xl border border-gold/40 bg-forest p-6 text-cream">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/20 pb-3">
-                  <span className="font-mono text-xs tracking-widest text-gold uppercase">{copy.calibrator}</span>
-                  <span className="rounded bg-gold px-2.5 py-0.5 font-mono text-[10px] font-bold text-forest uppercase" data-testid="tier-pill">
-                    {tier}
-                  </span>
-                </div>
-
-                <div>
-                  <div className="mb-2 flex justify-between gap-3 font-mono text-xs">
-                    <label htmlFor={`${id}-official`} className="text-cream/80 uppercase">
-                      {copy.official}
+            <form onSubmit={handleSubmit} noValidate className="relative" aria-label={copy.formLabel}>
+              {/* Locked until hydrated (src/hooks/useHydrated.js): nothing typed early gets wiped, no native submit. */}
+              <fieldset disabled={!hydrated} className="min-w-0 space-y-6">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor={`${id}-name`} className={LABEL}>
+                      {copy.fields.name}
                     </label>
-                    <span className="shrink-0 text-sm font-bold text-gold">
-                      {official.toFixed(1)} {copy.indexUnit}
+                    <input
+                      id={`${id}-name`}
+                      type="text"
+                      autoComplete="name"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder={copy.fields.namePlaceholder}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`${id}-email`} className={LABEL}>
+                      {copy.fields.email}
+                    </label>
+                    <input
+                      id={`${id}-email`}
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder={copy.fields.emailPlaceholder}
+                      aria-invalid={error ? 'true' : 'false'}
+                      aria-describedby={error ? errorId : undefined}
+                      className={INPUT}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor={`${id}-course`} className={LABEL}>
+                      {copy.fields.course}
+                    </label>
+                    <input
+                      id={`${id}-course`}
+                      type="text"
+                      value={course}
+                      onChange={(event) => setCourse(event.target.value)}
+                      placeholder={copy.fields.coursePlaceholder}
+                      className={INPUT}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`${id}-drink`} className={LABEL}>
+                      {copy.fields.drink}
+                    </label>
+                    <select id={`${id}-drink`} value={drink} onChange={(event) => setDrink(event.target.value)} className={INPUT}>
+                      {copy.drinks.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-6 rounded-xl border border-gold/40 bg-forest p-6 text-cream">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/20 pb-3">
+                    <span className="font-mono text-xs tracking-widest text-gold uppercase">{copy.calibrator}</span>
+                    <span className="rounded bg-gold px-2.5 py-0.5 font-mono text-[10px] font-bold text-forest uppercase" data-testid="tier-pill">
+                      {tier}
                     </span>
                   </div>
-                  <input
-                    id={`${id}-official`}
-                    type="range"
-                    min="0"
-                    max="28"
-                    step="0.5"
-                    value={official}
-                    onChange={(event) => setOfficial(Number(event.target.value))}
-                    className="club-slider"
-                  />
-                </div>
 
-                <div>
-                  <div className="mb-2 flex justify-between gap-3 font-mono text-xs">
-                    <label htmlFor={`${id}-negotiated`} className="text-cream/80 uppercase">
-                      {copy.negotiated}
-                    </label>
-                    <span className="shrink-0 text-sm font-bold text-gold">
-                      {negotiated.toFixed(1)} {copy.indexUnit}
-                    </span>
+                  <div>
+                    <div className="mb-2 flex justify-between gap-3 font-mono text-xs">
+                      <label htmlFor={`${id}-official`} className="text-cream/80 uppercase">
+                        {copy.official}
+                      </label>
+                      <span className="shrink-0 text-sm font-bold text-gold">
+                        {official.toFixed(1)} {copy.indexUnit}
+                      </span>
+                    </div>
+                    <input
+                      id={`${id}-official`}
+                      type="range"
+                      min="0"
+                      max="28"
+                      step="0.5"
+                      value={official}
+                      onChange={(event) => setOfficial(Number(event.target.value))}
+                      className="club-slider"
+                    />
                   </div>
+
+                  <div>
+                    <div className="mb-2 flex justify-between gap-3 font-mono text-xs">
+                      <label htmlFor={`${id}-negotiated`} className="text-cream/80 uppercase">
+                        {copy.negotiated}
+                      </label>
+                      <span className="shrink-0 text-sm font-bold text-gold">
+                        {negotiated.toFixed(1)} {copy.indexUnit}
+                      </span>
+                    </div>
+                    <input
+                      id={`${id}-negotiated`}
+                      type="range"
+                      min="0"
+                      max="36"
+                      step="0.5"
+                      value={negotiated}
+                      onChange={(event) => setNegotiated(Number(event.target.value))}
+                      className="club-slider"
+                    />
+                  </div>
+
+                  <div className="rounded-lg border border-gold/25 bg-charcoal/90 p-3.5">
+                    <p className="font-mono text-[10px] tracking-widest text-cream/60 uppercase">{copy.diagnosis}</p>
+                    <p className="font-serif text-lg text-gold italic" data-testid="diagnosis">
+                      &ldquo;{diagnosis}&rdquo;
+                    </p>
+                  </div>
+                </div>
+
+                {/* Honeypot: hidden from people and assistive tech; bots tend to fill it. */}
+                <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+                  <label htmlFor={`${id}-company`}>Company</label>
                   <input
-                    id={`${id}-negotiated`}
-                    type="range"
-                    min="0"
-                    max="36"
-                    step="0.5"
-                    value={negotiated}
-                    onChange={(event) => setNegotiated(Number(event.target.value))}
-                    className="club-slider"
+                    id={`${id}-company`}
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={company}
+                    onChange={(event) => setCompany(event.target.value)}
                   />
                 </div>
 
-                <div className="rounded-lg border border-gold/25 bg-charcoal/90 p-3.5">
-                  <p className="font-mono text-[10px] tracking-widest text-cream/60 uppercase">{copy.diagnosis}</p>
-                  <p className="font-serif text-lg text-gold italic" data-testid="diagnosis">
-                    &ldquo;{diagnosis}&rdquo;
+                {error && (
+                  <p id={errorId} role="alert" className="text-sm font-medium text-red-800">
+                    {error}
                   </p>
-                </div>
-              </div>
+                )}
 
-              {/* Honeypot: hidden from people and assistive tech; bots tend to fill it. */}
-              <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
-                <label htmlFor={`${id}-company`}>Company</label>
-                <input
-                  id={`${id}-company`}
-                  type="text"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  value={company}
-                  onChange={(event) => setCompany(event.target.value)}
-                />
-              </div>
-
-              {error && (
-                <p id={errorId} role="alert" className="text-sm font-medium text-red-800">
-                  {error}
-                </p>
-              )}
-
-              {status === 'success' ? (
-                <p role="status" className="rounded-lg border border-gold bg-forest px-4 py-4 font-mono text-xs font-semibold text-gold">
-                  {copy.success}
-                </p>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={status === 'submitting'}
-                  className="w-full rounded-lg border border-gold bg-forest py-4 font-mono text-xs font-bold tracking-[0.2em] text-gold uppercase shadow-lg transition hover:bg-forest-light disabled:opacity-60"
-                >
-                  {status === 'submitting' ? copy.sending : copy.submit}
-                </button>
-              )}
-              <p className="font-mono text-[10px] tracking-wider text-charcoal/60 uppercase">{copy.privacyNote}</p>
+                {status === 'success' ? (
+                  <p role="status" className="rounded-lg border border-gold bg-forest px-4 py-4 font-mono text-xs font-semibold text-gold">
+                    {copy.success}
+                  </p>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={status === 'submitting'}
+                    className="w-full rounded-lg border border-gold bg-forest py-4 font-mono text-xs font-bold tracking-[0.2em] text-gold uppercase shadow-lg transition hover:bg-forest-light disabled:opacity-60"
+                  >
+                    {status === 'submitting' ? copy.sending : copy.submit}
+                  </button>
+                )}
+                <p className="font-mono text-[10px] tracking-wider text-charcoal/70 uppercase">{copy.privacyNote}</p>
+              </fieldset>
             </form>
           </div>
 

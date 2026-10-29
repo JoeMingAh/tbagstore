@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react'
 import ProductCard from '../components/ProductCard.jsx'
 import { shop as copy } from '../content/copy.js'
 import { CATEGORIES, PRODUCTS } from '../content/products.js'
+import useHydrated from '../hooks/useHydrated.js'
 import { filterProducts } from '../lib/shop.js'
 
 const PILLS = [copy.allLabel, ...CATEGORIES].map((label) => ({
@@ -13,6 +14,8 @@ export default function Shop() {
   const id = useId()
   const [category, setCategory] = useState(copy.allLabel)
   const [search, setSearch] = useState('')
+  // Hydration would wipe a search typed into the prerendered page, so it opens once React runs.
+  const hydrated = useHydrated()
   const products = useMemo(() => filterProducts(PRODUCTS, { category, search }), [category, search])
 
   function reset() {
@@ -62,10 +65,11 @@ export default function Shop() {
             <input
               id={`${id}-search`}
               type="search"
+              disabled={!hydrated}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={copy.searchPlaceholder}
-              className="min-h-11 w-full rounded-lg border border-forest/20 bg-cream-warm pr-3 pl-9 font-mono text-xs text-charcoal placeholder:text-charcoal/60 focus:border-forest focus:outline-none"
+              className="min-h-11 w-full rounded-lg border border-forest/20 bg-cream-warm pr-3 pl-9 font-mono text-xs text-charcoal placeholder:text-charcoal/70 focus:border-forest focus:outline-none"
             />
             <svg className="absolute top-3.5 left-3 h-4 w-4 text-charcoal/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -75,6 +79,7 @@ export default function Shop() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <h2 className="sr-only">{copy.resultsHeading}</h2>
         {products.length === 0 ? (
           <div className="rounded-2xl border border-forest/15 bg-cream-warm p-8 py-16 text-center">
             <p className="font-serif text-3xl text-forest">{copy.emptyHeading}</p>

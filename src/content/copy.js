@@ -135,6 +135,7 @@ export const shop = {
   filterLabel: 'Filter by category',
   searchLabel: 'Search products',
   searchPlaceholder: 'Search gear or material...',
+  resultsHeading: 'Products', // screen readers only
   emptyHeading: 'No matching hardware in the locker.',
   emptyBody: 'Try clearing your search filter or selecting "All Gear".',
   reset: 'RESET FILTERS',

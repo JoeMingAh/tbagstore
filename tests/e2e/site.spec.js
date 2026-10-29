@@ -73,6 +73,23 @@ test('fonts are self-hosted from /assets', async ({ page }) => {
   for (const family of ['Cormorant Garamond', 'Plus Jakarta Sans', 'JetBrains Mono']) expect(families).toContain(family)
 })
 
+test('pages arrive prerendered with the hero fonts preloaded', async ({ request }) => {
+  for (const { path, heading } of PAGES) {
+    const html = await (await request.get(path)).text()
+    const root = html.slice(html.indexOf('<div id="root">'))
+    expect(root, path).toMatch(/<h1[^>]*>/)
+    if (typeof heading === 'string') expect(root, path).toContain(heading.replaceAll('&', '&amp;').replaceAll("'", '&#x27;'))
+    // The app script starts after the first frame instead of blocking it.
+    expect(html, path).not.toMatch(/<script type="module" crossorigin src=/)
+    const preloads = [...html.matchAll(/<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin="">/g)]
+    const expected = ['cormorant-garamond-latin-400-normal', 'cormorant-garamond-latin-400-italic', 'plus-jakarta-sans-latin-400-normal']
+    expect(preloads, path).toHaveLength(expected.length)
+    expected.forEach((face, i) => expect(preloads[i][1], path).toMatch(new RegExp(`^/assets/${face}-[\\w-]+\\.woff2$`)))
+  }
+  // The 404 page is the empty shell; React renders NotFound into it.
+  expect(await (await request.get('/definitely-not-a-page')).text()).toContain('<div id="root"></div>')
+})
+
 test('home has the ticker, hero, product grid, philosophy block and three craft cards', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByText('CNC-MILLED IN SMALL BATCHES').first()).toBeAttached()
@@ -167,6 +184,19 @@ test('unknown route returns a real 404 status and a not-found page', async ({ pa
   const response = await page.goto('/this-page-does-not-exist')
   expect(response.status()).toBe(404)
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible()
+})
+
+// Hydration resets controlled inputs, so prerendered forms must not accept input (or a native
+// submit) until React runs; the server HTML ships every form's controls in a disabled fieldset.
+test('prerendered forms are locked until hydration, then usable', async ({ page, request }) => {
+  for (const path of ['/about', '/club', '/products/the-first-tee-sack']) {
+    const html = await (await request.get(path)).text()
+    const forms = [...html.matchAll(/<form[^>]*>([\s\S]*?)<\/form>/g)].map((m) => m[1])
+    expect(forms.length, path).toBeGreaterThan(0)
+    for (const form of forms) expect(form, path).toMatch(/^<fieldset disabled=""/)
+  }
+  await page.goto('/about')
+  await expect(page.getByTestId('footer-signup').getByLabel('Email address')).toBeEditable()
 })
 
 test('robots.txt and sitemap.xml list only www.tbagstore.com URLs', async ({ request }) => {

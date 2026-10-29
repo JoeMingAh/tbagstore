@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import Logo from '../brand/Logo.jsx'
-import { BRAND_NAME } from '../brand/brand.js'
+import { BRAND_MOTTO, BRAND_NAME, LOGO_FILE } from '../brand/brand.js'
 import { announcement, header, nav } from '../content/copy.js'
 
 const NOTIFY_HREF = '#footer-signup'
@@ -63,7 +63,13 @@ export default function Header() {
               </svg>
             </button>
 
-            <Link to="/" onClick={closeMenu} className="group inline-flex min-h-11 min-w-0 items-center justify-self-center text-center" aria-label={`${BRAND_NAME} home`}>
+            {/* The name has to contain the visible wordmark and motto (WCAG 2.5.3 label in name). */}
+            <Link
+              to="/"
+              onClick={closeMenu}
+              className="group inline-flex min-h-11 min-w-0 items-center justify-self-center text-center"
+              aria-label={LOGO_FILE ? `${BRAND_NAME} home` : `${BRAND_NAME} ${BRAND_MOTTO}, home`}
+            >
               <Logo motto />
             </Link>
 
