@@ -65,13 +65,13 @@ function routingMiddleware(outDir) {
   }
 }
 
-// Font files the hero paints with (headline in Cormorant 400 + 400 italic, pitch in Jakarta 400).
-// They're preloaded so the swap from the fallback font lands early; every other face (all
-// font-display: swap) loads only when the CSS needs it. Matched against the built asset names.
+// Font files the hero headline paints with (Cormorant 400 + 400 italic). Only these are preloaded,
+// so they don't compete with anything else; every other face (all font-display: swap, with a
+// metric-matched local fallback in index.css) loads when the CSS needs it. Matched against the
+// built asset names.
 const CRITICAL_FONTS = [
   /^assets\/cormorant-garamond-latin-400-normal-[\w-]+\.woff2$/,
   /^assets\/cormorant-garamond-latin-400-italic-[\w-]+\.woff2$/,
-  /^assets\/plus-jakarta-sans-latin-400-normal-[\w-]+\.woff2$/,
 ]
 
 function fontPreloadTags(bundle) {
@@ -84,6 +84,19 @@ function fontPreloadTags(bundle) {
       injectTo: 'head',
     }
   })
+}
+
+// The whole stylesheet is small (~10 KB gzipped), so it goes inline in each page instead of a
+// render-blocking request: first paint needs only the HTML.
+const STYLESHEET = /<link rel="stylesheet" crossorigin href="\/(assets\/[^"]+\.css)">/
+
+function inlineStylesheet(html, bundle) {
+  const match = html.match(STYLESHEET)
+  if (!match) throw new Error('Built index.html has no <link rel="stylesheet" href=/assets/...css>')
+  const css = String(bundle[match[1]]?.source ?? '')
+  if (!css) throw new Error(`Stylesheet ${match[1]} is missing from the build`)
+  if (/<\/style/i.test(css)) throw new Error(`Stylesheet ${match[1]} cannot be inlined (contains </style)`)
+  return html.replace(match[0], () => `<style>${css}</style>`)
 }
 
 const ROOT_MARKUP = '<div id="root"></div>'
@@ -140,7 +153,8 @@ function tbagstoreSite(siteUrl) {
     // Dev server and build both start from the home page's tags; the build then writes a copy per route.
     transformIndexHtml(html, ctx) {
       const out = injectHead(html, pageMeta('/', siteUrl))
-      return ctx.bundle ? { html: deferEntryScript(out), tags: fontPreloadTags(ctx.bundle) } : out
+      if (!ctx.bundle) return out
+      return { html: inlineStylesheet(deferEntryScript(out), ctx.bundle), tags: fontPreloadTags(ctx.bundle) }
     },
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'robots.txt', source: buildRobotsTxt(siteUrl) })

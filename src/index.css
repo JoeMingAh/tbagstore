@@ -1,7 +1,49 @@
 @import 'tailwindcss';
 
 /* Palette and type from Joe's design (design/tbagger_luxury_golf_storefront.html).
-   Fonts are self-hosted via @fontsource (imported in main.jsx, font-display: swap). */
+   Fonts are self-hosted via @fontsource (font-display: swap): the hero headline's faces are
+   imported in main.jsx, the rest in fonts-later.css, which loads after the page's load event. */
+
+/* Metric-matched fallbacks: text paints at once in a local font sized to take the same space as
+   the web font, so the swap doesn't move anything. Values measured in Chromium against Times New
+   Roman / Arial / Courier New (Liberation, Tinos, Arimo and Cousine share their metrics):
+   size-adjust = web width / local width over sample copy; ascent/descent = web metric / size-adjust. */
+@font-face {
+  font-family: 'Cormorant Garamond Fallback';
+  src: local('Times New Roman'), local('TimesNewRomanPSMT'), local('Liberation Serif'), local('Tinos'), local('Times');
+  size-adjust: 95.33%;
+  ascent-override: 96.93%;
+  descent-override: 30.11%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Cormorant Garamond Fallback';
+  font-style: italic;
+  src:
+    local('Times New Roman Italic'), local('TimesNewRomanPS-ItalicMT'), local('Liberation Serif Italic'), local('Tinos Italic'),
+    local('Times Italic');
+  size-adjust: 86.85%;
+  ascent-override: 106.39%;
+  descent-override: 33.05%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans Fallback';
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('Arimo');
+  size-adjust: 103.59%;
+  ascent-override: 100.4%;
+  descent-override: 21.24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'JetBrains Mono Fallback';
+  src: local('Courier New'), local('CourierNewPSMT'), local('Liberation Mono'), local('Cousine');
+  size-adjust: 100%;
+  ascent-override: 102%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 @theme {
   --color-forest: #0a2116;
   --color-forest-light: #0f2e1f;
@@ -18,9 +60,9 @@
      and 4.9:1 on cream-warm (WCAG AA 4.5:1). Plain gold is only for dark (forest/charcoal) backgrounds. */
   --color-gold-dark: #7d5f27;
 
-  --font-serif: 'Cormorant Garamond', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-serif: 'Cormorant Garamond', 'Cormorant Garamond Fallback', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', 'Plus Jakarta Sans Fallback', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', ui-monospace, monospace;
 
   --animate-marquee: marquee-scroll 36s linear infinite;
   --animate-view-fade: view-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -152,6 +194,12 @@ body {
     border: 3px solid var(--color-forest);
     cursor: pointer;
   }
+}
+
+/* Pages fade in only on in-app navigation (App.jsx sets data-client-nav). The prerendered first
+   paint shows them at once: starting at opacity 0 would hold back LCP until the fade ran. */
+html:not([data-client-nav]) .animate-view-fade {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

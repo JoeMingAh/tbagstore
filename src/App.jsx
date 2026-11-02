@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import Footer from './components/Footer.jsx'
@@ -27,11 +27,23 @@ function ScrollToTop() {
   return null
 }
 
+// The first page is prerendered and shows without a fade (index.css). From the first in-app
+// route change on, pages fade in; set before paint so the new page starts its fade from frame one.
+function EnableViewFade() {
+  const { pathname } = useLocation()
+  const firstPath = useRef(pathname)
+  useLayoutEffect(() => {
+    if (pathname !== firstPath.current) document.documentElement.setAttribute('data-client-nav', '')
+  }, [pathname])
+  return null
+}
+
 export default function App() {
   usePageMeta()
   return (
     <>
       <ScrollToTop />
+      <EnableViewFade />
       <div className="flex min-h-screen flex-col">
         <Header />
         <main className="flex-grow">

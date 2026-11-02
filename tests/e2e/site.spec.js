@@ -73,6 +73,29 @@ test('fonts are self-hosted from /assets', async ({ page }) => {
   for (const family of ['Cormorant Garamond', 'Plus Jakarta Sans', 'JetBrains Mono']) expect(families).toContain(family)
 })
 
+test('only the hero fonts are requested before load; the other faces follow after it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  // fonts-later.css adds the non-hero faces after load; wait until the ticker's mono face has arrived.
+  await page.waitForFunction(() =>
+    performance.getEntriesByType('resource').some((entry) => /\/assets\/jetbrains-mono-latin-400-normal-[\w-]+\.woff2$/.test(entry.name)),
+  )
+  const { loadStart, fonts } = await page.evaluate(() => ({
+    loadStart: performance.getEntriesByType('navigation')[0].loadEventStart,
+    fonts: performance
+      .getEntriesByType('resource')
+      .filter((entry) => /\.woff2?$/.test(entry.name))
+      .map((entry) => ({ file: new URL(entry.name).pathname, startTime: entry.startTime })),
+  }))
+  const face = ({ file }) => file.replace(/^\/assets\/(.+?-(?:normal|italic))-[\w-]+\.woff2?$/, '$1')
+  const beforeLoad = fonts.filter((font) => font.startTime < loadStart).map(face).sort()
+  expect(beforeLoad).toEqual(['cormorant-garamond-latin-400-italic', 'cormorant-garamond-latin-400-normal'])
+  const afterLoad = fonts.filter((font) => font.startTime >= loadStart).map(face)
+  for (const later of ['plus-jakarta-sans-latin-400-normal', 'jetbrains-mono-latin-400-normal', 'cormorant-garamond-latin-700-normal']) {
+    expect(afterLoad).toContain(later)
+  }
+})
+
 test('pages arrive prerendered with the hero fonts preloaded', async ({ request }) => {
   for (const { path, heading } of PAGES) {
     const html = await (await request.get(path)).text()
@@ -81,13 +104,38 @@ test('pages arrive prerendered with the hero fonts preloaded', async ({ request 
     if (typeof heading === 'string') expect(root, path).toContain(heading.replaceAll('&', '&amp;').replaceAll("'", '&#x27;'))
     // The app script starts after the first frame instead of blocking it.
     expect(html, path).not.toMatch(/<script type="module" crossorigin src=/)
+    // Only the hero headline faces are preloaded; the rest swap in over metric-matched fallbacks.
     const preloads = [...html.matchAll(/<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin="">/g)]
-    const expected = ['cormorant-garamond-latin-400-normal', 'cormorant-garamond-latin-400-italic', 'plus-jakarta-sans-latin-400-normal']
+      .map((match) => match[1])
+      .sort()
+    const expected = ['cormorant-garamond-latin-400-italic', 'cormorant-garamond-latin-400-normal']
     expect(preloads, path).toHaveLength(expected.length)
-    expected.forEach((face, i) => expect(preloads[i][1], path).toMatch(new RegExp(`^/assets/${face}-[\\w-]+\\.woff2$`)))
+    expected.forEach((face, i) => expect(preloads[i], path).toMatch(new RegExp(`^/assets/${face}-[\\w-]+\\.woff2$`)))
+    // CSS is inlined: no render-blocking stylesheet request before first paint.
+    expect(html, path).not.toMatch(/<link rel="stylesheet"/)
+    expect(html, path).toMatch(/@font-face\{font-family:["']?Cormorant Garamond Fallback/)
   }
   // The 404 page is the empty shell; React renders NotFound into it.
   expect(await (await request.get('/definitely-not-a-page')).text()).toContain('<div id="root"></div>')
+})
+
+test('the first page shows without a fade; in-app navigation fades the next page in', async ({ page }) => {
+  // Hold the app script back so this is the prerendered HTML before any JS runs.
+  await page.route(/\/assets\/index-[\w-]+\.js$/, () => {})
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  const heroOpacity = await page.getByRole('heading', { level: 1 }).evaluate((h1) => {
+    let opacity = 1
+    for (let el = h1; el; el = el.parentElement) opacity *= Number(getComputedStyle(el).opacity)
+    return { opacity, animation: getComputedStyle(h1.closest('.animate-view-fade')).animationName }
+  })
+  expect(heroOpacity).toEqual({ opacity: 1, animation: 'none' })
+
+  await page.unrouteAll()
+  await page.goto('/')
+  await expect(page.locator('#root button[type="submit"]').first()).toBeEnabled()
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: /Ethos/ }).click()
+  await expect(page).toHaveURL(/\/about$/)
+  await expect(page.locator('main .animate-view-fade')).toHaveCSS('animation-name', 'view-fade-in')
 })
 
 test('home has the ticker, hero, product grid, philosophy block and three craft cards', async ({ page }) => {
