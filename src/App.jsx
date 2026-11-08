@@ -27,6 +27,8 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      {/* Full-width accent stitch. Orange stays on this bar and on CTAs, not on section fills. */}
+      <div aria-hidden="true" className="h-24 bg-accent" data-accent-bar />
       <Footer />
       {/* Cookieless Vercel Web Analytics (mentioned on the privacy page). */}
       <Analytics mode={import.meta.env.PROD ? 'production' : 'development'} />

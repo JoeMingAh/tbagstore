@@ -10,6 +10,10 @@ export const LOGO_FILE = null
 
 export const BRAND_NAME = 'tbagstore'
 
-// Placeholder palette, shared with the generated images. Matches --color-brand in index.css.
-export const BRAND_COLOR = '#14532d'
-export const BRAND_TEXT_COLOR = '#f5f5f4'
+// Hybrid palette. Keep these roles: do not reuse accent as a section fill.
+// Matches the --color-* tokens in src/index.css.
+export const COLOR_CREAM = '#F6F4EE'
+export const COLOR_INK = '#0A0A0A'
+export const COLOR_ACCENT = '#FF6A13'
+export const COLOR_GOLD = '#C5A059'
+export const COLOR_FOREST = '#0A2116'

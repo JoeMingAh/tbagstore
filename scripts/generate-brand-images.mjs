@@ -11,7 +11,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Resvg } from '@resvg/resvg-js'
-import { BRAND_COLOR, BRAND_NAME, BRAND_TEXT_COLOR, LOGO_FILE } from '../src/brand/brand.js'
+import { BRAND_NAME, COLOR_ACCENT, COLOR_CREAM, COLOR_GOLD, COLOR_INK, LOGO_FILE } from '../src/brand/brand.js'
 import { share } from '../src/content/copy.js'
 import { OG_IMAGE_HEIGHT, OG_IMAGE_PATH, OG_IMAGE_WIDTH } from '../src/seo.js'
 
@@ -22,7 +22,6 @@ const FONT_FILES = [
   require.resolve('@expo-google-fonts/inter/800ExtraBold/Inter_800ExtraBold.ttf'),
   require.resolve('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
 ]
-const ACCENT = '#bbf7d0'
 
 function escapeXml(value) {
   return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
@@ -43,13 +42,13 @@ function ogImageSvg(logo) {
   const h = OG_IMAGE_HEIGHT
   const mark = logo
     ? `<image href="${logo}" x="${w / 2 - 400}" y="140" width="800" height="260" preserveAspectRatio="xMidYMid meet" />`
-    : `<text x="${w / 2}" y="330" text-anchor="middle" font-family="Inter" font-weight="800" font-size="168" letter-spacing="-6" fill="${BRAND_TEXT_COLOR}">${escapeXml(BRAND_NAME)}</text>`
+    : `<text x="${w / 2}" y="330" text-anchor="middle" font-family="Inter" font-weight="800" font-size="168" letter-spacing="-6" fill="${COLOR_INK}">${escapeXml(BRAND_NAME)}</text>`
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-  <rect width="${w}" height="${h}" fill="${BRAND_COLOR}" />
-  <rect x="40" y="40" width="${w - 80}" height="${h - 80}" rx="32" fill="none" stroke="${ACCENT}" stroke-opacity="0.35" stroke-width="4" />
+  <rect width="${w}" height="${h}" fill="${COLOR_CREAM}" />
+  <rect x="40" y="40" width="${w - 80}" height="${h - 80}" rx="32" fill="none" stroke="${COLOR_GOLD}" stroke-width="4" />
   ${mark}
-  <rect x="${w / 2 - 60}" y="388" width="120" height="6" rx="3" fill="${ACCENT}" />
-  <text x="${w / 2}" y="470" text-anchor="middle" font-family="Inter" font-weight="600" font-size="48" fill="${ACCENT}">${escapeXml(share.imageTagline)}</text>
+  <rect x="${w / 2 - 80}" y="388" width="160" height="12" rx="2" fill="${COLOR_ACCENT}" />
+  <text x="${w / 2}" y="470" text-anchor="middle" font-family="Inter" font-weight="600" font-size="48" fill="${COLOR_INK}">${escapeXml(share.imageTagline)}</text>
 </svg>`
 }
 
@@ -57,9 +56,9 @@ function ogImageSvg(logo) {
 function iconSvg(logo, { fontFamily }) {
   const mark = logo
     ? `<image href="${logo}" x="8" y="8" width="48" height="48" preserveAspectRatio="xMidYMid meet" />`
-    : `<text x="32" y="45" text-anchor="middle" font-family="${fontFamily}" font-size="38" font-weight="800" fill="${BRAND_TEXT_COLOR}">${escapeXml(BRAND_NAME[0])}</text>`
+    : `<text x="32" y="45" text-anchor="middle" font-family="${fontFamily}" font-size="38" font-weight="800" fill="${COLOR_CREAM}">${escapeXml(BRAND_NAME[0])}</text>`
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="${BRAND_COLOR}" />
+  <rect width="64" height="64" rx="14" fill="${COLOR_INK}" />
   ${mark}
 </svg>`
 }
