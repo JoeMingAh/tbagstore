@@ -1,9 +1,8 @@
 @import 'tailwindcss';
 
-/* Hybrid palette (approved Nov 1, 2026). Roles stay separate so orange cannot
-   become a large surface: cream is the ground (~60%), ink is type and secondary
-   sections (~30%), accent is CTAs and highlight bars (~10%). Gold is a thin
-   rule. Forest is a tiny label pill. */
+/* Hybrid palette (approved Nov 1, 2026). Cream is the ground (~60%), ink is
+   type and secondary sections (~30%). Orange is only for primary CTAs, via
+   .btn-primary. Gold is a hairline. Forest is a tiny label pill. */
 @theme {
   --color-cream: #f6f4ee;
   --color-ink: #0a0a0a;
@@ -22,4 +21,13 @@ html {
 :focus-visible {
   outline: 2px solid #0a0a0a;
   outline-offset: 3px;
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-full border-2 border-ink bg-accent font-bold text-ink hover:bg-accent-hover;
+  }
+  .btn-secondary {
+    @apply rounded-full border-2 border-ink bg-transparent font-bold text-ink hover:bg-ink hover:text-cream;
+  }
 }

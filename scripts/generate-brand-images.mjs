@@ -11,7 +11,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Resvg } from '@resvg/resvg-js'
-import { BRAND_NAME, COLOR_ACCENT, COLOR_CREAM, COLOR_GOLD, COLOR_INK, LOGO_FILE } from '../src/brand/brand.js'
+import { BRAND_NAME, COLOR_CREAM, COLOR_GOLD, COLOR_INK, LOGO_FILE } from '../src/brand/brand.js'
 import { share } from '../src/content/copy.js'
 import { OG_IMAGE_HEIGHT, OG_IMAGE_PATH, OG_IMAGE_WIDTH } from '../src/seo.js'
 
@@ -47,7 +47,7 @@ function ogImageSvg(logo) {
   <rect width="${w}" height="${h}" fill="${COLOR_CREAM}" />
   <rect x="40" y="40" width="${w - 80}" height="${h - 80}" rx="32" fill="none" stroke="${COLOR_GOLD}" stroke-width="4" />
   ${mark}
-  <rect x="${w / 2 - 80}" y="388" width="160" height="12" rx="2" fill="${COLOR_ACCENT}" />
+  <rect x="${w / 2 - 72}" y="394" width="144" height="3" fill="${COLOR_GOLD}" />
   <text x="${w / 2}" y="470" text-anchor="middle" font-family="Inter" font-weight="600" font-size="48" fill="${COLOR_INK}">${escapeXml(share.imageTagline)}</text>
 </svg>`
 }

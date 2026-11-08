@@ -19,13 +19,13 @@ export default function Home() {
           <div className="mt-8 flex flex-wrap gap-3">
             <a
               href="#signup"
-              className="rounded-full border-2 border-ink bg-accent px-5 py-2.5 font-semibold text-ink hover:bg-accent-hover"
+              className="btn-primary px-5 py-2.5"
             >
               Get notified at launch
             </a>
             <Link
               to={PRODUCT_PATH}
-              className="rounded-full border-2 border-ink px-5 py-2.5 font-semibold hover:bg-ink hover:text-cream"
+              className="btn-secondary px-5 py-2.5"
             >
               {home.cta}
             </Link>

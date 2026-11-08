@@ -15,7 +15,7 @@ export default function Header() {
           </Link>
           <a
             href="/#signup"
-            className="rounded-full border-2 border-ink bg-accent px-3.5 py-1.5 font-semibold text-ink hover:bg-accent-hover"
+            className="btn-primary px-3.5 py-1.5"
           >
             Get notified
           </a>

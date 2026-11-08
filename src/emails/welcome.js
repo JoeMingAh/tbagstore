@@ -36,7 +36,7 @@ export function buildWelcomeEmail({ siteUrl }) {
         <td align="center" style="padding:32px 16px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${COLOR_CREAM};border:1px solid ${COLOR_GOLD};border-radius:16px;overflow:hidden;">
             <tr>
-              <td style="background:${COLOR_INK};padding:24px 32px;border-bottom:8px solid ${COLOR_ACCENT};">
+              <td style="background:${COLOR_INK};padding:24px 32px;border-bottom:1px solid ${COLOR_GOLD};">
                 <a href="${escapeHtml(homeUrl)}" style="color:${COLOR_CREAM};font-size:28px;font-weight:800;text-decoration:none;">${escapeHtml(BRAND_NAME)}</a>
               </td>
             </tr>

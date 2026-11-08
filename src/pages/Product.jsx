@@ -20,7 +20,7 @@ export default function Product() {
           <h2 className="mt-8 text-lg font-semibold">Key features</h2>
           <ul className="mt-3 space-y-4">
             {product.features.map((feature) => (
-              <li key={feature.title} className="rounded-2xl border border-gold border-t-4 border-t-accent bg-cream p-4">
+              <li key={feature.title} className="rounded-2xl border border-gold bg-cream p-4">
                 <h3 className="font-semibold">{feature.title}</h3>
                 <p className="mt-1">{feature.body}</p>
               </li>

@@ -65,7 +65,7 @@ export default function SignupForm() {
         <button
           type="submit"
           disabled={status === 'submitting'}
-          className="rounded-full border-2 border-ink bg-accent px-5 py-2.5 font-semibold text-ink hover:bg-accent-hover disabled:opacity-60"
+          className="btn-primary px-5 py-2.5 disabled:opacity-60"
         >
           {status === 'submitting' ? 'Sending…' : copy.button}
         </button>

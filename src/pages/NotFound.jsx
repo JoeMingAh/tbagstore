@@ -11,7 +11,7 @@ export default function NotFound() {
       <p className="mt-4">That page is out of bounds. Let&rsquo;s get you back to the fairway.</p>
       <Link
         to="/"
-        className="mt-8 inline-block rounded-full border-2 border-ink bg-accent px-5 py-2.5 font-semibold text-ink hover:bg-accent-hover"
+        className="btn-primary mt-8 px-5 py-2.5"
       >
         Back to home
       </Link>
