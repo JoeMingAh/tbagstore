@@ -10,6 +10,14 @@ export const LOGO_FILE = null
 
 export const BRAND_NAME = 'tbagstore'
 
-// Placeholder palette, shared with the generated images. Matches --color-brand in index.css.
-export const BRAND_COLOR = '#14532d'
-export const BRAND_TEXT_COLOR = '#f5f5f4'
+// Hybrid palette. Orange is for primary CTAs only (.btn-primary). Do not use it
+// on bars, borders, badges, or section fills. Matches the --color-* tokens in src/index.css.
+export const COLOR_CREAM = '#F6F4EE'
+export const COLOR_INK = '#0A0A0A'
+// Sunset orange. Primary CTAs only. Hover and active are the same hue, darkened,
+// and still clear WCAG AA with an ink label (7.6:1, 5.9:1, 5.2:1).
+export const COLOR_ACCENT = '#FF7A1A'
+export const COLOR_ACCENT_HOVER = '#E06B17'
+export const COLOR_ACCENT_ACTIVE = '#D16415'
+export const COLOR_GOLD = '#C5A059'
+export const COLOR_FOREST = '#0A2116'

@@ -10,9 +10,9 @@ export default function Product() {
         <ProductImagePlaceholder />
         <div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{product.name}</h1>
-          <p className="mt-3 text-lg text-stone-600">{product.tagline}</p>
+          <p className="mt-3 text-lg">{product.tagline}</p>
           <p
-            className="mt-6 inline-block rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900"
+            className="mt-6 inline-block rounded-full bg-forest px-4 py-2 text-sm font-semibold text-cream"
             data-testid="product-status"
           >
             {product.status}
@@ -20,9 +20,9 @@ export default function Product() {
           <h2 className="mt-8 text-lg font-semibold">Key features</h2>
           <ul className="mt-3 space-y-4">
             {product.features.map((feature) => (
-              <li key={feature.title} className="rounded-2xl border border-stone-200 bg-white p-4">
-                <h3 className="font-semibold text-brand">{feature.title}</h3>
-                <p className="mt-1 text-stone-600">{feature.body}</p>
+              <li key={feature.title} className="rounded-2xl border border-gold bg-cream p-4">
+                <h3 className="font-semibold">{feature.title}</h3>
+                <p className="mt-1">{feature.body}</p>
               </li>
             ))}
           </ul>

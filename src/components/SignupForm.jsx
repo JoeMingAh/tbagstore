@@ -37,7 +37,7 @@ export default function SignupForm() {
 
   if (status === 'success') {
     return (
-      <p role="status" className="rounded-xl bg-green-100 px-4 py-3 font-medium text-green-900">
+      <p role="status" className="rounded-xl px-4 py-3 font-medium text-ink">
         {copy.success}
       </p>
     )
@@ -60,12 +60,12 @@ export default function SignupForm() {
           onChange={(event) => setEmail(event.target.value)}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? errorId : undefined}
-          className="min-w-0 flex-1 rounded-full border border-stone-300 bg-white px-4 py-3 text-base outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+          className="min-w-0 flex-1 rounded-full border border-ink bg-cream px-4 py-3 text-base text-ink outline-none placeholder:text-ink/50 focus:border-ink focus:ring-2 focus:ring-ink"
         />
         <button
           type="submit"
           disabled={status === 'submitting'}
-          className="rounded-full bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-light disabled:opacity-60"
+          className="btn-primary px-5 py-2.5 disabled:opacity-60"
         >
           {status === 'submitting' ? 'Sending…' : copy.button}
         </button>
