@@ -6,8 +6,9 @@
 @theme {
   --color-cream: #f6f4ee;
   --color-ink: #0a0a0a;
-  --color-accent: #ff6a13;
-  --color-accent-hover: #e25c0c;
+  --color-accent: #ff7a1a;
+  --color-accent-hover: #e06b17;
+  --color-accent-active: #d16415;
   --color-gold: #c5a059;
   --color-forest: #0a2116;
 }
@@ -25,7 +26,7 @@ html {
 
 @layer components {
   .btn-primary {
-    @apply rounded-full border-2 border-ink bg-accent font-bold text-ink hover:bg-accent-hover;
+    @apply rounded-full border-2 border-ink bg-accent font-bold text-ink hover:bg-accent-hover active:bg-accent-active;
   }
   .btn-secondary {
     @apply rounded-full border-2 border-ink bg-transparent font-bold text-ink hover:bg-ink hover:text-cream;

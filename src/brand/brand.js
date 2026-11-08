@@ -14,6 +14,10 @@ export const BRAND_NAME = 'tbagstore'
 // on bars, borders, badges, or section fills. Matches the --color-* tokens in src/index.css.
 export const COLOR_CREAM = '#F6F4EE'
 export const COLOR_INK = '#0A0A0A'
-export const COLOR_ACCENT = '#FF6A13'
+// Sunset orange. Primary CTAs only. Hover and active are the same hue, darkened,
+// and still clear WCAG AA with an ink label (7.6:1, 5.9:1, 5.2:1).
+export const COLOR_ACCENT = '#FF7A1A'
+export const COLOR_ACCENT_HOVER = '#E06B17'
+export const COLOR_ACCENT_ACTIVE = '#D16415'
 export const COLOR_GOLD = '#C5A059'
 export const COLOR_FOREST = '#0A2116'
