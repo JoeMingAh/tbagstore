@@ -1,10 +1,210 @@
 @import 'tailwindcss';
 
+/* Palette and type from Joe's design (design/tbagger_luxury_golf_storefront.html).
+   Fonts are self-hosted via @fontsource (font-display: swap): the hero headline's faces are
+   imported in main.jsx, the rest in fonts-later.css, which loads after the page's load event. */
+
+/* Metric-matched fallbacks: text paints at once in a local font sized to take the same space as
+   the web font, so the swap doesn't move anything. Values measured in Chromium against Times New
+   Roman / Arial / Courier New (Liberation, Tinos, Arimo and Cousine share their metrics):
+   size-adjust = web width / local width over sample copy; ascent/descent = web metric / size-adjust. */
+@font-face {
+  font-family: 'Cormorant Garamond Fallback';
+  src: local('Times New Roman'), local('TimesNewRomanPSMT'), local('Liberation Serif'), local('Tinos'), local('Times');
+  size-adjust: 95.33%;
+  ascent-override: 96.93%;
+  descent-override: 30.11%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Cormorant Garamond Fallback';
+  font-style: italic;
+  src:
+    local('Times New Roman Italic'), local('TimesNewRomanPS-ItalicMT'), local('Liberation Serif Italic'), local('Tinos Italic'),
+    local('Times Italic');
+  size-adjust: 86.85%;
+  ascent-override: 106.39%;
+  descent-override: 33.05%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans Fallback';
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('Arimo');
+  size-adjust: 103.59%;
+  ascent-override: 100.4%;
+  descent-override: 21.24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'JetBrains Mono Fallback';
+  src: local('Courier New'), local('CourierNewPSMT'), local('Liberation Mono'), local('Cousine');
+  size-adjust: 100%;
+  ascent-override: 102%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
 @theme {
-  --color-brand: #14532d;
-  --color-brand-light: #166534;
+  --color-forest: #0a2116;
+  --color-forest-light: #0f2e1f;
+  --color-forest-dark: #06150e;
+  --color-charcoal: #141615;
+  --color-charcoal-light: #1e211f;
+  --color-charcoal-muted: #2a2e2b;
+  --color-cream: #f6f4ee;
+  --color-cream-warm: #ede9df;
+  --color-cream-dark: #ddd7c8;
+  --color-gold: #c5a059;
+  --color-gold-light: #d9b876;
+  /* Gold text on light surfaces. The mockup's #9e7d3b was 3.5:1 on cream; this is 5.4:1 on cream
+     and 4.9:1 on cream-warm (WCAG AA 4.5:1). Plain gold is only for dark (forest/charcoal) backgrounds. */
+  --color-gold-dark: #7d5f27;
+
+  --font-serif: 'Cormorant Garamond', 'Cormorant Garamond Fallback', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', 'Plus Jakarta Sans Fallback', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', ui-monospace, monospace;
+
+  --animate-marquee: marquee-scroll 36s linear infinite;
+  --animate-view-fade: view-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes marquee-scroll {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes view-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background-color: var(--color-gold);
+  color: var(--color-forest);
+}
+
+@layer components {
+  /* Alternating mowed fairway stripes */
+  .fairway-stripes {
+    background-color: var(--color-forest);
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.022) 0px,
+      rgba(255, 255, 255, 0.022) 48px,
+      rgba(0, 0, 0, 0.14) 48px,
+      rgba(0, 0, 0, 0.14) 96px
+    );
+  }
+
+  /* Golf ball micro-dimple dot matrix */
+  .dimple-pattern {
+    background-image: radial-gradient(rgba(20, 22, 21, 0.075) 1.25px, transparent 1.25px);
+    background-size: 14px 14px;
+  }
+
+  .dimple-pattern-dark {
+    background-image: radial-gradient(rgba(197, 160, 89, 0.12) 1.25px, transparent 1.25px);
+    background-size: 16px 16px;
+  }
+
+  /* Saddle leather dashed gold stitching */
+  .leather-stitch {
+    position: relative;
+  }
+  .leather-stitch::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1px dashed rgba(197, 160, 89, 0.45);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .saddle-card {
+    background: linear-gradient(145deg, #181b19 0%, #101211 100%);
+    box-shadow:
+      0 20px 40px -15px rgba(10, 33, 22, 0.25),
+      inset 0 1px 0 rgba(197, 160, 89, 0.2);
+  }
+
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+
+  /* Handicap calibrator sliders */
+  input[type='range'].club-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+  }
+  input[type='range'].club-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    cursor: pointer;
+    background: rgba(197, 160, 89, 0.25);
+    border-radius: 999px;
+    border: 1px solid rgba(197, 160, 89, 0.4);
+  }
+  input[type='range'].club-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 22px;
+    width: 22px;
+    margin-top: -9px;
+    border-radius: 50%;
+    background: var(--color-gold);
+    border: 3px solid var(--color-forest);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease;
+  }
+  input[type='range'].club-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  input[type='range'].club-slider::-moz-range-track {
+    height: 6px;
+    background: rgba(197, 160, 89, 0.25);
+    border-radius: 999px;
+    border: 1px solid rgba(197, 160, 89, 0.4);
+  }
+  input[type='range'].club-slider::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--color-gold);
+    border: 3px solid var(--color-forest);
+    cursor: pointer;
+  }
+}
+
+/* Pages fade in only on in-app navigation (App.jsx sets data-client-nav). The prerendered first
+   paint shows them at once: starting at opacity 0 would hold back LCP until the fade ran. */
+html:not([data-client-nav]) .animate-view-fade {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-view-fade {
+    animation: none;
+  }
 }

@@ -3,7 +3,7 @@
 // Plain HTML with inline styles and table layout so it renders in most email clients.
 import { BRAND_COLOR, BRAND_NAME, BRAND_TEXT_COLOR } from '../brand/brand.js'
 import { CONTACT_EMAIL, welcomeEmail as copy } from '../content/copy.js'
-import { PRODUCT_PATH } from '../routes.js'
+import { SHOP_PATH } from '../routes.js'
 import { absoluteUrl } from '../seo.js'
 
 export function escapeHtml(value) {
@@ -16,7 +16,7 @@ export function escapeHtml(value) {
 }
 
 export function buildWelcomeEmail({ siteUrl }) {
-  const productUrl = absoluteUrl(siteUrl, PRODUCT_PATH)
+  const shopUrl = absoluteUrl(siteUrl, SHOP_PATH)
   const homeUrl = absoluteUrl(siteUrl, '/')
   const paragraphs = copy.paragraphs
     .map((text) => `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#44403c;">${escapeHtml(text)}</p>`)
@@ -45,7 +45,7 @@ export function buildWelcomeEmail({ siteUrl }) {
               <h1 style="margin:0 0 16px;font-size:24px;line-height:32px;color:#1c1917;">${escapeHtml(copy.heading)}</h1>
               ${paragraphs}
               <p style="margin:24px 0;">
-                <a href="${escapeHtml(productUrl)}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;font-weight:600;padding:12px 24px;border-radius:999px;text-decoration:none;">${escapeHtml(copy.cta)}</a>
+                <a href="${escapeHtml(shopUrl)}" style="display:inline-block;background:${BRAND_COLOR};color:#ffffff;font-weight:600;padding:12px 24px;border-radius:999px;text-decoration:none;">${escapeHtml(copy.cta)}</a>
               </p>
               <p style="margin:0;font-size:16px;line-height:24px;color:#44403c;">${escapeHtml(copy.signoff)}<br />${escapeHtml(copy.signature)}</p>
               </td>
@@ -68,7 +68,7 @@ export function buildWelcomeEmail({ siteUrl }) {
     copy.heading,
     '',
     ...copy.paragraphs.flatMap((p) => [p, '']),
-    `${copy.cta}: ${productUrl}`,
+    `${copy.cta}: ${shopUrl}`,
     '',
     copy.signoff,
     copy.signature,

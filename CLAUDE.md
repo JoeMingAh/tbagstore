@@ -4,25 +4,26 @@
 - Never commit `.env*` files or secrets.
 
 # === ACTIVE TICKET PLAN ===
-(tbagstore issue #3; #1 is already merged and its code is the baseline)
+(tbagstore issue #8, branch `tbagger-redesign`. The mockup is also copied at design/tbagger_luxury_golf_storefront.html; the issue's paths under /workspace/tbagstore-design/ are the same file plus screenshots.)
 
-Overnight follow-up to #1. Work on a new branch from `main` (e.g. `launch-polish`). Same stack and rules as #1: preview only until The Refiner posts PASS.
+Joe wants the site rebuilt to match his mockup instead of the current coming-soon design.
 
-## Scope
-1. **Share previews + SEO**: Open Graph and Twitter card tags on every page (title, description, `og:image`, canonical URL on `https://www.tbagstore.com`). Generate a 1200x630 share image in `public/` that uses the text-logo placeholder (easy to swap later, same as the logo). Add favicon and apple-touch icon from the placeholder.
-2. **Product structured data**: JSON-LD `Product` on the towel page with no price/offer yet (coming soon). Organization JSON-LD on home.
-3. **Analytics**: add Vercel Web Analytics (`@vercel/analytics`). No cookies, no banner needed. Mention it in the privacy page.
-4. **Policy pages**: `/faq`, `/shipping`, `/returns` with placeholder copy in `src/content/copy.js`, each showing a visible "Draft, pending approval" note until Joe approves. Link them in the footer; add to sitemap (www only).
-5. **Welcome email (off by default)**: a React Email (or plain HTML) welcome template in the repo plus a send step in `/api/subscribe` that runs only when `WELCOME_EMAIL_ENABLED=true` and the contact is new. Use `RESEND_FROM` env for the sender. No env changes needed now: leave it disabled. Copy is draft for Joe.
+**Reference (on the shared box):** `/workspace/tbagstore-design/tbagger_luxury_golf_storefront.html` (open in a browser), plus screenshots `tbagger-mock-desktop.png` and `tbagger-mock-phone.png` in the same folder. Branch `tbagger-redesign` from `main`; preview only until Refiner PASS.
 
-## Out of scope
-Checkout, prices, real product photos, final logo.
+## Build
+- Port the look into the existing Vite + React app: forest/cream/gold palette, Cormorant Garamond + Plus Jakarta Sans + JetBrains Mono (self-hosted, no Google Fonts or Tailwind CDN), the ticker bar, hero, product grid, the "philosophy" block, the three craft cards and the footer.
+- Views as real routes, not hidden sections: `/` home, `/shop`, `/products/:slug`, `/about`, `/club`. Keep `/faq`, `/shipping`, `/returns`, `/privacy`, the real 404, per-route meta/OG/canonical, sitemap, analytics and the 44px tap targets from #3/#5.
+- Brand: show **TBagger Golf Co.** as a text wordmark (logo still a placeholder via `public/brand/` + `LOGO_FILE`).
+- Products: put the 8 mockup products in one data file (`src/content/products.js`) with name, slug, tagline, description and price. **Prices stay hidden** behind a `SHOW_PRICES` flag (default off) until Joe confirms them. Each product says "Coming soon".
+- No checkout: replace "Add to bag" / checkout / card form with a "Notify me" that uses the existing `/api/subscribe` (brand=tbagstore). Do not ship any card-number field. Remove the cart and checkout views.
+- Images: no Unsplash photos (they aren't our products). Use the styled placeholders until Joe's samples are photographed.
+- Copy: move all copy to `src/content/copy.js` and keep the mockup's wording as a draft. Flag for Joe's approval any factual claims (Scottsdale & St Andrews, Italian leather, CNC brass, N52 magnets, batch numbers, member counts, "est." dates), since we can't verify them yet.
 
 ## Acceptance (The Refiner)
-- Build, unit tests, Playwright and lint pass on a clean install.
-- OG/Twitter tags and canonical present on home, product, privacy, faq, shipping, returns; share image returns 200 at 1200x630.
-- JSON-LD validates as JSON and has no price.
-- New pages load at 390 and 1280 wide with no sideways overflow or console errors; sitemap lists only www URLs; 404 still real.
-- Analytics script loads in production build.
-- With `WELCOME_EMAIL_ENABLED` unset, a signup sends **no** email and still returns `{ok:true}` with `brand=tbagstore`; a unit test covers the enabled path with Resend mocked.
-- Delete any test contacts.
+- Clean install: build, unit tests, Playwright, lint pass.
+- Every route loads at 390 and 1280 with no sideways overflow or console errors, and the look visually matches the mockup screenshots.
+- No requests to cdn.tailwindcss.com, fonts.googleapis.com or images.unsplash.com.
+- No prices visible with `SHOW_PRICES` unset; no card or checkout fields anywhere.
+- Notify-me signup saves to Resend with brand=tbagstore; delete the test contact (with Joe's OK).
+- Lighthouse mobile performance at least 90 on home; accessibility, best practices and SEO stay 100.
+

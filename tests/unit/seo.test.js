@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { buildRobotsTxt, buildSitemapXml, resolveSiteUrl } from '../../src/seo.js'
-import { ROUTES, isKnownRoute, routeHtmlFile } from '../../src/routes.js'
+import { REDIRECTS, ROUTES, TOWEL_PATH, findRedirect, isKnownRoute, routeHtmlFile } from '../../src/routes.js'
 
 const DEFAULT = 'https://www.tbagstore.com'
 
@@ -33,13 +33,30 @@ describe('robots.txt and sitemap.xml', () => {
     const locs = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1])
     expect(locs).toEqual([
       `${DEFAULT}/`,
-      `${DEFAULT}/products/magnetic-golf-towel`,
+      `${DEFAULT}/shop`,
+      `${DEFAULT}/products/the-first-tee-sack`,
+      `${DEFAULT}/products/the-heavy-hitter`,
+      `${DEFAULT}/products/the-clingy-caddie`,
+      `${DEFAULT}/products/the-sandbaggers-stash`,
+      `${DEFAULT}/products/the-crown-jewel`,
+      `${DEFAULT}/products/the-yardage-alibi`,
+      `${DEFAULT}/products/the-gentlemans-timber`,
+      `${DEFAULT}/products/the-back-nine-flask-valet-pouch`,
+      `${DEFAULT}/about`,
+      `${DEFAULT}/club`,
       `${DEFAULT}/faq`,
       `${DEFAULT}/shipping`,
       `${DEFAULT}/returns`,
       `${DEFAULT}/privacy`,
     ])
     for (const loc of locs) expect(loc.startsWith(`${DEFAULT}/`)).toBe(true)
+  })
+
+  it('has no checkout and leaves old URLs out of the sitemap', () => {
+    const xml = buildSitemapXml(DEFAULT)
+    expect(xml).not.toContain('/checkout')
+    expect(xml).not.toContain('/products/magnetic-golf-towel')
+    expect(xml).not.toContain('/towel')
   })
 })
 
@@ -55,12 +72,29 @@ describe('routes and vercel.json', () => {
     for (const rewrite of vercel.rewrites) expect(rewrite.destination).toBe(routeHtmlFile(rewrite.source))
   })
 
+  it('permanently redirects the old towel URLs to The Clingy Caddie, matching REDIRECTS', () => {
+    expect(TOWEL_PATH).toBe('/products/the-clingy-caddie')
+    expect(vercel.redirects).toEqual(REDIRECTS.map((r) => ({ ...r, permanent: true })))
+    for (const { source, destination } of vercel.redirects) {
+      expect(isKnownRoute(destination)).toBe(true)
+      expect(isKnownRoute(source)).toBe(false)
+    }
+    expect(findRedirect('/products/magnetic-golf-towel')?.destination).toBe(TOWEL_PATH)
+    expect(findRedirect('/towel/')?.destination).toBe(TOWEL_PATH)
+    expect(findRedirect('/shop')).toBeNull()
+  })
+
   it('isKnownRoute matches real pages only', () => {
-    expect(isKnownRoute('/')).toBe(true)
-    expect(isKnownRoute('/products/magnetic-golf-towel')).toBe(true)
-    expect(isKnownRoute('/privacy/')).toBe(true)
+    for (const path of ['/', '/shop', '/products/the-clingy-caddie', '/club', '/about', '/privacy/']) {
+      expect(isKnownRoute(path), path).toBe(true)
+    }
     for (const path of ['/faq', '/shipping', '/returns']) expect(isKnownRoute(path)).toBe(true)
     expect(isKnownRoute('/nope')).toBe(false)
     expect(isKnownRoute('/products')).toBe(false)
+    expect(isKnownRoute('/products/magnetic-golf-towel')).toBe(false)
+    expect(isKnownRoute('/checkout')).toBe(false)
+    expect(isKnownRoute('/shop/the-clingy-caddie')).toBe(false)
+    expect(isKnownRoute('/products/not-a-product')).toBe(false)
+    expect(isKnownRoute('/products/the-clingy-caddie/extra')).toBe(false)
   })
 })

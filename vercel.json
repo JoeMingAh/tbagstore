@@ -4,8 +4,22 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/products/magnetic-golf-towel", "destination": "/products/the-clingy-caddie", "permanent": true },
+    { "source": "/towel", "destination": "/products/the-clingy-caddie", "permanent": true }
+  ],
   "rewrites": [
-    { "source": "/products/magnetic-golf-towel", "destination": "/products/magnetic-golf-towel/index.html" },
+    { "source": "/shop", "destination": "/shop/index.html" },
+    { "source": "/products/the-first-tee-sack", "destination": "/products/the-first-tee-sack/index.html" },
+    { "source": "/products/the-heavy-hitter", "destination": "/products/the-heavy-hitter/index.html" },
+    { "source": "/products/the-clingy-caddie", "destination": "/products/the-clingy-caddie/index.html" },
+    { "source": "/products/the-sandbaggers-stash", "destination": "/products/the-sandbaggers-stash/index.html" },
+    { "source": "/products/the-crown-jewel", "destination": "/products/the-crown-jewel/index.html" },
+    { "source": "/products/the-yardage-alibi", "destination": "/products/the-yardage-alibi/index.html" },
+    { "source": "/products/the-gentlemans-timber", "destination": "/products/the-gentlemans-timber/index.html" },
+    { "source": "/products/the-back-nine-flask-valet-pouch", "destination": "/products/the-back-nine-flask-valet-pouch/index.html" },
+    { "source": "/about", "destination": "/about/index.html" },
+    { "source": "/club", "destination": "/club/index.html" },
     { "source": "/faq", "destination": "/faq/index.html" },
     { "source": "/shipping", "destination": "/shipping/index.html" },
     { "source": "/returns", "destination": "/returns/index.html" },
@@ -14,14 +28,28 @@
   "headers": [
     {
       "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Frame-Options", "value": "DENY" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
       ]
     }
   ]
